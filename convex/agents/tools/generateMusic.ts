@@ -104,7 +104,7 @@ export const generateMusic = internalAction({
 
     // If this is part of a rap battle, handle battle orchestration
     if (args.battleId && args.threadId) {
-      const battle = await ctx.runQuery(internal.rapBattle.getBattle, {
+      const battle = await ctx.runQuery(internal.rapBattle.getBattleInternal, {
         battleId: args.battleId,
       });
 

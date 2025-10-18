@@ -151,7 +151,7 @@ export const executeRound = internalAction({
     }
 
     // Get battle details
-    const battle = await ctx.runQuery(internal.rapBattle.getBattle, {
+    const battle = await ctx.runQuery(internal.rapBattle.getBattleInternal, {
       battleId: args.battleId,
     });
 
@@ -259,7 +259,14 @@ export const saveRound = internalMutation({
   },
 });
 
-export const getBattle = internalQuery({
+export const getBattle = query({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  handler: async (ctx, args) => ctx.db.get(args.battleId),
+});
+
+export const getBattleInternal = internalQuery({
   args: {
     battleId: v.id("rapBattles"),
   },
@@ -278,5 +285,33 @@ export const getBattleByThreadId = internalQuery({
           b.agent2ThreadId === args.threadId) &&
         b.state !== "done"
     );
+  },
+});
+
+export const getRoundsByBattle = query({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("rounds")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
+  },
+});
+
+export const getMusicTrack = query({
+  args: {
+    trackId: v.id("musicTracks"),
+  },
+  handler: async (ctx, args) => {
+    const track = await ctx.db.get(args.trackId);
+    if (!track) return null;
+
+    const storageUrl = await ctx.storage.getUrl(track.storageId);
+    return {
+      ...track,
+      storageUrl,
+    };
   },
 });
