@@ -15,6 +15,7 @@ type BattleMainContentProps = {
   isYourTurn: boolean;
   yourAgentName?: string;
   currentTurn: Doc<"turns"> | null;
+  isReplayMode?: boolean;
 };
 
 export function BattleMainContent({
@@ -28,6 +29,7 @@ export function BattleMainContent({
   isYourTurn,
   yourAgentName,
   currentTurn,
+  isReplayMode = false,
 }: BattleMainContentProps) {
   return (
     <div className="mb-10">
@@ -44,21 +46,30 @@ export function BattleMainContent({
 
       {/* Battle Status Indicator */}
       <div className="mb-6">
-        <BattleStatus
-          agent1Name={battle.agent1Name}
-          agent2Name={battle.agent2Name}
-          battleState={battle.state}
-          currentlyPlayingAgentName={currentTurn?.agentName}
-          currentRound={battle.currentRound}
-          currentTurnUserId={battle.currentTurnUserId}
-          currentUserId={currentUser?._id}
-          partner1UserId={battle.partner1UserId}
-          playbackState={battle.playbackState}
-        />
+        {isReplayMode ? (
+          <div className="rounded-lg border border-brand-coral/50 bg-brand-coral/10 p-4 text-center backdrop-blur-xl">
+            <p className="font-bold text-brand-coral text-xl">🎬 Replay Mode</p>
+            <p className="mt-2 text-sm text-white/70">
+              Navigate rounds and play tracks freely
+            </p>
+          </div>
+        ) : (
+          <BattleStatus
+            agent1Name={battle.agent1Name}
+            agent2Name={battle.agent2Name}
+            battleState={battle.state}
+            currentlyPlayingAgentName={currentTurn?.agentName}
+            currentRound={battle.currentRound}
+            currentTurnUserId={battle.currentTurnUserId}
+            currentUserId={currentUser?._id}
+            partner1UserId={battle.partner1UserId}
+            playbackState={battle.playbackState}
+          />
+        )}
       </div>
 
-      {/* Instruction Input (only visible to rapping partners) */}
-      {isRappingPartner && battle.state === "in_progress" && (
+      {/* Instruction Input (only visible to rapping partners in active battles) */}
+      {!isReplayMode && isRappingPartner && battle.state === "in_progress" && (
         <div className="mb-6">
           <InstructionInput
             agentName={yourAgentName ?? ""}
@@ -76,6 +87,7 @@ export function BattleMainContent({
         agent2Name={battle.agent2Name}
         agent2Turn={agent2Turn}
         battleId={battle._id}
+        isReplayMode={isReplayMode}
         yourAgentName={yourAgentName}
       />
     </div>

@@ -116,6 +116,7 @@ export default defineSchema(
     cheers: defineTable({
       battleId: v.id("rapBattles"),
       userId: v.id("users"),
+      agentName: v.string(), // Which agent/player is being cheered for
       cheerType: v.union(
         v.literal("applause"),
         v.literal("boo"),

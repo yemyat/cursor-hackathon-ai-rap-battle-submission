@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BattlesIndexRouteImport } from './routes/battles.index'
+import { Route as ReplayBattleIdRouteImport } from './routes/replay.$battleId'
 import { Route as BattlesCreateRouteImport } from './routes/battles.create'
 import { Route as BattlesBattleIdRouteImport } from './routes/battles.$battleId'
 import { Route as BattlesThemeThemeIdRouteImport } from './routes/battles.theme.$themeId'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const BattlesIndexRoute = BattlesIndexRouteImport.update({
   id: '/battles/',
   path: '/battles/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReplayBattleIdRoute = ReplayBattleIdRouteImport.update({
+  id: '/replay/$battleId',
+  path: '/replay/$battleId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BattlesCreateRoute = BattlesCreateRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/battles/$battleId': typeof BattlesBattleIdRoute
   '/battles/create': typeof BattlesCreateRoute
+  '/replay/$battleId': typeof ReplayBattleIdRoute
   '/battles': typeof BattlesIndexRoute
   '/battles/theme/$themeId': typeof BattlesThemeThemeIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/battles/$battleId': typeof BattlesBattleIdRoute
   '/battles/create': typeof BattlesCreateRoute
+  '/replay/$battleId': typeof ReplayBattleIdRoute
   '/battles': typeof BattlesIndexRoute
   '/battles/theme/$themeId': typeof BattlesThemeThemeIdRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/battles/$battleId': typeof BattlesBattleIdRoute
   '/battles/create': typeof BattlesCreateRoute
+  '/replay/$battleId': typeof ReplayBattleIdRoute
   '/battles/': typeof BattlesIndexRoute
   '/battles/theme/$themeId': typeof BattlesThemeThemeIdRoute
 }
@@ -69,6 +78,7 @@ export interface FileRouteTypes {
     | '/'
     | '/battles/$battleId'
     | '/battles/create'
+    | '/replay/$battleId'
     | '/battles'
     | '/battles/theme/$themeId'
   fileRoutesByTo: FileRoutesByTo
@@ -76,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/battles/$battleId'
     | '/battles/create'
+    | '/replay/$battleId'
     | '/battles'
     | '/battles/theme/$themeId'
   id:
@@ -83,6 +94,7 @@ export interface FileRouteTypes {
     | '/'
     | '/battles/$battleId'
     | '/battles/create'
+    | '/replay/$battleId'
     | '/battles/'
     | '/battles/theme/$themeId'
   fileRoutesById: FileRoutesById
@@ -91,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BattlesBattleIdRoute: typeof BattlesBattleIdRoute
   BattlesCreateRoute: typeof BattlesCreateRoute
+  ReplayBattleIdRoute: typeof ReplayBattleIdRoute
   BattlesIndexRoute: typeof BattlesIndexRoute
   BattlesThemeThemeIdRoute: typeof BattlesThemeThemeIdRoute
 }
@@ -109,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/battles'
       fullPath: '/battles'
       preLoaderRoute: typeof BattlesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/replay/$battleId': {
+      id: '/replay/$battleId'
+      path: '/replay/$battleId'
+      fullPath: '/replay/$battleId'
+      preLoaderRoute: typeof ReplayBattleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/battles/create': {
@@ -139,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BattlesBattleIdRoute: BattlesBattleIdRoute,
   BattlesCreateRoute: BattlesCreateRoute,
+  ReplayBattleIdRoute: ReplayBattleIdRoute,
   BattlesIndexRoute: BattlesIndexRoute,
   BattlesThemeThemeIdRoute: BattlesThemeThemeIdRoute,
 }

@@ -22,6 +22,7 @@ type AudioPlayerProps = {
   onPlayAgent2?: () => void;
   battleId: Id<"rapBattles">;
   isCheerleader: boolean;
+  isRoundComplete: boolean;
 };
 
 export function AudioPlayer({
@@ -40,12 +41,14 @@ export function AudioPlayer({
   onPlayAgent2,
   battleId,
   isCheerleader,
+  isRoundComplete,
 }: AudioPlayerProps) {
   const sendCheer = useMutation(api.cheers.sendCheer);
 
   const handleCheer = async (cheerType: "applause" | "boo" | "fire") => {
     try {
-      await sendCheer({ battleId, cheerType });
+      const agentName = currentTurn?.agentName || agent1Name;
+      await sendCheer({ battleId, agentName, cheerType });
     } catch {
       toast.error("Failed to send cheer. Please try again.");
     }
@@ -134,7 +137,8 @@ export function AudioPlayer({
             <>
               <div className="mx-2 w-px bg-tokyo-terminal/50" />
               <Button
-                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-green/60 hover:bg-tokyo-terminal hover:text-tokyo-green focus-visible:ring-2 focus-visible:ring-tokyo-green/50"
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-green/60 hover:bg-tokyo-terminal hover:text-tokyo-green focus-visible:ring-2 focus-visible:ring-tokyo-green/50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={isRoundComplete}
                 onClick={() => handleCheer("applause")}
                 title="Applause"
                 variant="outline"
@@ -142,7 +146,8 @@ export function AudioPlayer({
                 👏
               </Button>
               <Button
-                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-orange/60 hover:bg-tokyo-terminal hover:text-tokyo-orange focus-visible:ring-2 focus-visible:ring-tokyo-orange/50"
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-orange/60 hover:bg-tokyo-terminal hover:text-tokyo-orange focus-visible:ring-2 focus-visible:ring-tokyo-orange/50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={isRoundComplete}
                 onClick={() => handleCheer("fire")}
                 title="Fire"
                 variant="outline"
@@ -150,7 +155,8 @@ export function AudioPlayer({
                 🔥
               </Button>
               <Button
-                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-red/60 hover:bg-tokyo-terminal hover:text-tokyo-red focus-visible:ring-2 focus-visible:ring-tokyo-red/50"
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-red/60 hover:bg-tokyo-terminal hover:text-tokyo-red focus-visible:ring-2 focus-visible:ring-tokyo-red/50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={isRoundComplete}
                 onClick={() => handleCheer("boo")}
                 title="Boo"
                 variant="outline"

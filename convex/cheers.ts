@@ -7,6 +7,7 @@ import { mutation, query } from "./_generated/server";
 export const sendCheer = mutation({
   args: {
     battleId: v.id("rapBattles"),
+    agentName: v.string(),
     cheerType: v.union(
       v.literal("applause"),
       v.literal("boo"),
@@ -48,6 +49,7 @@ export const sendCheer = mutation({
     const cheerId = await ctx.db.insert("cheers", {
       battleId: args.battleId,
       userId: user._id,
+      agentName: args.agentName,
       cheerType: args.cheerType,
       timestamp: Date.now(),
       roundNumber: battle.currentRound,
@@ -70,6 +72,7 @@ export const getCheersForBattle = query({
       _creationTime: v.number(),
       battleId: v.id("rapBattles"),
       userId: v.id("users"),
+      agentName: v.string(),
       cheerType: v.union(
         v.literal("applause"),
         v.literal("boo"),
@@ -89,7 +92,7 @@ export const getCheersForBattle = query({
 
     // Enrich with usernames
     type EnrichedCheerAll = (typeof cheers)[0] & { username: string };
-    const enrichedCheers: Array<EnrichedCheerAll> = [];
+    const enrichedCheers: EnrichedCheerAll[] = [];
     for (const cheer of cheers) {
       const user = await ctx.db.get(cheer.userId);
       enrichedCheers.push({
@@ -115,6 +118,7 @@ export const getRecentCheers = query({
       _creationTime: v.number(),
       battleId: v.id("rapBattles"),
       userId: v.id("users"),
+      agentName: v.string(),
       cheerType: v.union(
         v.literal("applause"),
         v.literal("boo"),
@@ -134,7 +138,7 @@ export const getRecentCheers = query({
 
     // Enrich with usernames
     type EnrichedRecentCheer = (typeof cheers)[0] & { username: string };
-    const enrichedCheers: Array<EnrichedRecentCheer> = [];
+    const enrichedCheers: EnrichedRecentCheer[] = [];
     for (const cheer of cheers) {
       const user = await ctx.db.get(cheer.userId);
       enrichedCheers.push({

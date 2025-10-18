@@ -56,7 +56,13 @@ function ThemeBattlesPage() {
   };
 
   const handleViewBattle = async (battleId: Id<"rapBattles">) => {
-    await navigate({ to: "/battles/$battleId", params: { battleId } });
+    // Check if battle is completed
+    const battle = battles?.find((b) => b._id === battleId);
+    if (battle?.state === "done") {
+      await navigate({ to: "/replay/$battleId", params: { battleId } });
+    } else {
+      await navigate({ to: "/battles/$battleId", params: { battleId } });
+    }
   };
 
   if (!theme) {

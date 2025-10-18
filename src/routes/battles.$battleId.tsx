@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { AudioPlayer } from "@/components/battle/audio-player";
 import { AudioSync } from "@/components/battle/audio-sync";
 import { BattleMainContent } from "@/components/battle/battle-main-content";
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/battles/$battleId")({
 
 function BattleView() {
   const { battleId } = Route.useParams();
+  const navigate = useNavigate();
 
   const battleLogic = useBattleLogic(battleId);
   const {
@@ -39,10 +40,26 @@ function BattleView() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const joinBattle = useMutation(api.rapBattle.joinBattle);
 
+  // Redirect completed battles to replay route
+  useEffect(() => {
+    if (battle && battle.state === "done") {
+      navigate({ to: "/replay/$battleId", params: { battleId } });
+    }
+  }, [battle, battleId, navigate]);
+
   if (!battle) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
         <p className="text-zinc-400">Loading battle...</p>
+      </div>
+    );
+  }
+
+  // Redirect if completed - this prevents any rendering of active battle UI for done battles
+  if (battle.state === "done") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <p className="text-zinc-400">Redirecting to replay...</p>
       </div>
     );
   }
@@ -115,6 +132,7 @@ function BattleView() {
           hasAgent1Track={agent1Track !== undefined}
           hasAgent2Track={agent2Track !== undefined}
           isCheerleader={isCheerleader ?? false}
+          isRoundComplete={false}
           onAudioEnded={() => {
             // Workflow handles progression automatically
           }}

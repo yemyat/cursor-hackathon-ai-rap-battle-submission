@@ -6,6 +6,10 @@ import type { Id } from "../../../convex/_generated/dataModel";
 
 type CheerDisplayProps = {
   battleId: Id<"rapBattles">;
+  isReplayMode?: boolean;
+  agent1Name?: string;
+  agent2Name?: string;
+  currentRound?: number;
 };
 
 const CHEER_ICONS = {
@@ -24,7 +28,10 @@ type FlyingEmoji = {
   left: number;
 };
 
-export function CheerDisplay({ battleId }: CheerDisplayProps) {
+export function CheerDisplay({
+  battleId,
+  isReplayMode = false,
+}: CheerDisplayProps) {
   const recentCheers = useQuery(api.cheers.getRecentCheers, { battleId });
   const cheerStats = useQuery(api.cheers.getCheerStats, { battleId });
   const [flyingEmojis, setFlyingEmojis] = useState<FlyingEmoji[]>([]);
@@ -61,17 +68,23 @@ export function CheerDisplay({ battleId }: CheerDisplayProps) {
 
   return (
     <Card className="mesh-card relative overflow-hidden border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
-      {flyingEmojis.map((emoji) => (
-        <div
-          className="pointer-events-none absolute bottom-0 animate-fly-up text-4xl"
-          key={emoji.id}
-          style={{ left: `${emoji.left}%` }}
-        >
-          {emoji.emoji}
-        </div>
-      ))}
+      {!isReplayMode &&
+        flyingEmojis.map((emoji) => (
+          <div
+            className="pointer-events-none absolute bottom-0 animate-fly-up text-4xl"
+            key={emoji.id}
+            style={{ left: `${emoji.left}%` }}
+          >
+            {emoji.emoji}
+          </div>
+        ))}
       <CardHeader>
-        <CardTitle className="text-tokyo-fg text-xl">Crowd Reactions</CardTitle>
+        <CardTitle className="text-tokyo-fg text-xl">
+          {isReplayMode ? "Historical Reactions" : "Crowd Reactions"}
+        </CardTitle>
+        {isReplayMode && (
+          <p className="text-sm text-tokyo-comment">Viewing past reactions</p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-around border-tokyo-terminal/30 border-b pb-3">
@@ -115,7 +128,9 @@ export function CheerDisplay({ battleId }: CheerDisplayProps) {
           ))}
           {(!recentCheers || recentCheers.length === 0) && (
             <p className="py-4 text-center text-sm text-tokyo-comment">
-              No reactions yet. Be the first to cheer!
+              {isReplayMode
+                ? "No reactions recorded for this battle."
+                : "No reactions yet. Be the first to cheer!"}
             </p>
           )}
         </div>

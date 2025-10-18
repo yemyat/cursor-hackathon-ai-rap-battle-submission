@@ -11,6 +11,7 @@ type BattleLayoutProps = {
   agent2IsPlaying: boolean;
   battleId: Id<"rapBattles">;
   yourAgentName?: string;
+  isReplayMode?: boolean;
 };
 
 export function BattleLayout({
@@ -22,6 +23,7 @@ export function BattleLayout({
   agent2IsPlaying,
   battleId,
   yourAgentName,
+  isReplayMode = false,
 }: BattleLayoutProps) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -47,7 +49,7 @@ export function BattleLayout({
 
       {/* Cheer Display */}
       <div className="lg:col-span-1">
-        <CheerDisplay battleId={battleId} />
+        <CheerDisplay battleId={battleId} isReplayMode={isReplayMode} />
       </div>
     </div>
   );
