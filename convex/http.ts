@@ -1,207 +1,70 @@
+import { Webhook } from "svix";
 import { httpRouter } from "convex/server";
+import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
 
 const http = httpRouter();
 
-// CORS configuration
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, x-fal-target-url",
-  "Access-Control-Max-Age": "86400",
-};
-
-// Handle preflight requests
 http.route({
-  path: "/api/fal/proxy",
-  method: "OPTIONS",
-  handler: httpAction(
-    async () =>
-      new Response(null, {
-        status: 204,
-        headers: CORS_HEADERS,
-      })
-  ),
-});
-
-http.route({
-  path: "/api/fal/proxy",
-  method: "GET",
-  handler: httpAction(async (_ctx, req) => handleFalProxy(req)),
-});
-
-http.route({
-  path: "/api/fal/proxy",
+  path: "/clerk-webhook",
   method: "POST",
-  handler: httpAction(async (_ctx, req) => handleFalProxy(req)),
+  handler: httpAction(async (ctx, req) => {
+    const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    const svixId = req.headers.get("svix-id");
+    const svixTimestamp = req.headers.get("svix-timestamp");
+    const svixSignature = req.headers.get("svix-signature");
+
+    if (!(svixId && svixTimestamp && svixSignature)) {
+      return new Response("Missing Svix headers", { status: 400 });
+    }
+
+    const payload = await req.text();
+    const body = JSON.parse(payload);
+
+    const webhook = new Webhook(webhookSecret);
+
+    try {
+      webhook.verify(payload, {
+        "svix-id": svixId,
+        "svix-timestamp": svixTimestamp,
+        "svix-signature": svixSignature,
+      });
+    } catch {
+      return new Response("Invalid signature", { status: 400 });
+    }
+
+    const eventType = body.type;
+    const userData = body.data;
+
+    switch (eventType) {
+      case "user.created":
+      case "user.updated":
+        await ctx.runMutation(internal.users.upsertUser, {
+          clerkId: userData.id,
+          email: userData.email_addresses[0]?.email_address,
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          imageUrl: userData.image_url,
+        });
+        break;
+
+      case "user.deleted":
+        await ctx.runMutation(internal.users.deleteUser, {
+          clerkId: userData.id,
+        });
+        break;
+
+      default:
+        break;
+    }
+
+    return new Response("Webhook processed", { status: 200 });
+  }),
 });
-
-function validateTargetUrl(targetUrl: string | null): Response | URL {
-  if (!targetUrl) {
-    return new Response(
-      JSON.stringify({ error: "Missing x-fal-target-url header" }),
-      {
-        status: 400,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(targetUrl);
-  } catch {
-    return new Response(
-      JSON.stringify({ error: "Invalid URL in x-fal-target-url header" }),
-      {
-        status: 412,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  const hostname = parsedUrl.hostname;
-  const isValidDomain =
-    hostname.endsWith(".fal.ai") ||
-    hostname.endsWith(".fal.run") ||
-    hostname === "fal.ai" ||
-    hostname === "fal.run";
-
-  if (!isValidDomain) {
-    return new Response(
-      JSON.stringify({
-        error: "Target URL must point to *.fal.ai or *.fal.run domain",
-      }),
-      {
-        status: 412,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  return parsedUrl;
-}
-
-function validateContentType(req: Request): Response | null {
-  if (req.method === "POST") {
-    const contentType = req.headers.get("content-type");
-    if (contentType && !contentType.includes("application/json")) {
-      return new Response(
-        JSON.stringify({
-          error: "Unsupported Media Type. Only application/json is supported",
-        }),
-        {
-          status: 415,
-          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        }
-      );
-    }
-  }
-  return null;
-}
-
-function buildProxyHeaders(req: Request, falKey: string): Headers {
-  const proxyHeaders = new Headers();
-  proxyHeaders.set("Authorization", `Key ${falKey}`);
-
-  req.headers.forEach((value, key) => {
-    if (
-      key.toLowerCase() !== "authorization" &&
-      key.toLowerCase() !== "host" &&
-      key.toLowerCase() !== "x-fal-target-url"
-    ) {
-      proxyHeaders.set(key, value);
-    }
-  });
-
-  return proxyHeaders;
-}
-
-function buildResponseHeaders(response: Response): Headers {
-  const responseHeaders = new Headers(CORS_HEADERS);
-  response.headers.forEach((value, key) => {
-    if (
-      key.toLowerCase() !== "content-length" &&
-      key.toLowerCase() !== "content-encoding"
-    ) {
-      responseHeaders.set(key, value);
-    }
-  });
-  return responseHeaders;
-}
-
-async function handleFalProxy(req: Request): Promise<Response> {
-  // Validate HTTP method (already handled by router, but included for completeness)
-  if (req.method !== "GET" && req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Extract and validate target URL
-  const targetUrl = req.headers.get("x-fal-target-url");
-  const urlValidation = validateTargetUrl(targetUrl);
-  if (urlValidation instanceof Response) {
-    return urlValidation;
-  }
-
-  // Validate content type
-  const contentTypeError = validateContentType(req);
-  if (contentTypeError) {
-    return contentTypeError;
-  }
-
-  // Get FAL API key from environment
-  const falKey = process.env.FAL_KEY;
-
-  if (!falKey) {
-    return new Response(
-      JSON.stringify({ error: "FAL_KEY environment variable not configured" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  // Prepare headers and request body
-  const proxyHeaders = buildProxyHeaders(req, falKey);
-  const requestInit: RequestInit = {
-    method: req.method,
-    headers: proxyHeaders,
-  };
-
-  if (req.method === "POST") {
-    const body = await req.text();
-    if (body) {
-      requestInit.body = body;
-    }
-  }
-
-  // Make the proxied request
-  try {
-    const response = await fetch(urlValidation.toString(), requestInit);
-    const responseHeaders = buildResponseHeaders(response);
-    const responseBody = await response.text();
-
-    return new Response(responseBody, {
-      status: response.status,
-      headers: responseHeaders,
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "Failed to proxy request to Fal API",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-}
 
 export default http;

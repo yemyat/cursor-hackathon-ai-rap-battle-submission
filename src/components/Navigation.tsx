@@ -1,4 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/clerk-react";
 
 export function Navigation() {
   const router = useRouterState();
@@ -26,7 +32,7 @@ export function Navigation() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Link
               className={`group relative px-6 py-2.5 font-semibold text-sm transition-all duration-300 ${
                 isActive("/battles")
@@ -54,6 +60,28 @@ export function Navigation() {
             >
               <span className="relative z-10">Create Battle</span>
             </Link>
+
+            <div className="flex items-center">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button
+                    type="button"
+                    className="rounded-full bg-white/10 px-4 py-2 font-medium text-sm text-zinc-50 transition-colors hover:bg-white/20"
+                  >
+                    Sign In
+                  </button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-10 h-10",
+                    },
+                  }}
+                />
+              </SignedIn>
+            </div>
           </div>
         </div>
       </div>

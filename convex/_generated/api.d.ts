@@ -13,8 +13,11 @@ import type * as agents_tools_generateMusic from "../agents/tools/generateMusic.
 import type * as agents_tools_generateMusicTool from "../agents/tools/generateMusicTool.js";
 import type * as agents_tools_saveCompositionPlan from "../agents/tools/saveCompositionPlan.js";
 import type * as agents_tools_saveMusicTrack from "../agents/tools/saveMusicTrack.js";
+import type * as cheers from "../cheers.js";
 import type * as http from "../http.js";
 import type * as rapBattle from "../rapBattle.js";
+import type * as themes from "../themes.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -36,8 +39,11 @@ declare const fullApi: ApiFromModules<{
   "agents/tools/generateMusicTool": typeof agents_tools_generateMusicTool;
   "agents/tools/saveCompositionPlan": typeof agents_tools_saveCompositionPlan;
   "agents/tools/saveMusicTrack": typeof agents_tools_saveMusicTrack;
+  cheers: typeof cheers;
   http: typeof http;
   rapBattle: typeof rapBattle;
+  themes: typeof themes;
+  users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

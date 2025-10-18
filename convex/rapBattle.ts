@@ -12,6 +12,10 @@ import {
 } from "./_generated/server";
 import { createRapAgent } from "./agents/rapAgent";
 
+const TURN_DURATION_MS = 10_000; // 10 seconds for instructions
+const MAX_ROUNDS = 3;
+const POINT_FIVE = 0.5;
+
 // Create a new rap battle thread
 export const createBattleThread = mutation({
   args: {
@@ -86,49 +90,303 @@ export const takeTurn = internalAction({
   },
 });
 
-// Start a new rap battle
-export const startRapBattle = mutation({
+/**
+ * Create a new battle waiting for a partner
+ */
+export const createBattle = mutation({
   args: {
-    theme: v.string(),
-    agent1Name: v.string(),
-    agent2Name: v.string(),
+    themeId: v.id("themes"),
   },
   returns: v.id("rapBattles"),
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get current user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Get theme
+    const theme = await ctx.db.get(args.themeId);
+    if (!theme) {
+      throw new Error("Theme not found");
+    }
+
+    // Randomly assign creator to side1 or side2
+    const isCreatorSide1 = Math.random() < POINT_FIVE;
+    const partner1Side = isCreatorSide1 ? theme.side1Name : theme.side2Name;
+
     const now = Date.now();
 
-    // Create threads for both agents
-    const agent1ThreadId = await createThread(ctx, components.agent, {
-      title: `${args.agent1Name} - ${args.theme}`,
-    });
-
-    const agent2ThreadId = await createThread(ctx, components.agent, {
-      title: `${args.agent2Name} - ${args.theme}`,
-    });
-
-    // Create the battle record
+    // Create the battle record (waiting for partner)
     const battleId = await ctx.db.insert("rapBattles", {
-      theme: args.theme,
-      state: "preparing",
+      themeId: args.themeId,
+      theme: theme.name,
+      state: "waiting_for_partner",
       currentRound: 1,
-      agent1Name: args.agent1Name,
-      agent2Name: args.agent2Name,
-      agent1ThreadId,
-      agent2ThreadId,
+      agent1Name: theme.side1Name,
+      agent2Name: theme.side2Name,
+      partner1UserId: user._id,
+      partner1Side,
+      waitingForPartner: true,
       createdAt: now,
       updatedAt: now,
     });
 
-    // Kick off the first round with agent1
-    await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
-      battleId,
-      agentName: args.agent1Name,
-      threadId: agent1ThreadId,
-      roundNumber: 1,
-      previousLyrics: null,
+    return battleId;
+  },
+});
+
+/**
+ * Join a battle as the second partner
+ */
+export const joinBattle = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get current user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    if (!battle.waitingForPartner) {
+      throw new Error("Battle is not waiting for a partner");
+    }
+
+    if (battle.partner1UserId === user._id) {
+      throw new Error("Cannot join your own battle");
+    }
+
+    // Assign joiner to opposite side
+    const partner2Side =
+      battle.partner1Side === battle.agent1Name
+        ? battle.agent2Name
+        : battle.agent1Name;
+
+    // Create threads for both agents
+    const agent1ThreadId = await createThread(ctx, components.agent, {
+      title: `${battle.agent1Name} - ${battle.theme}`,
     });
 
-    return battleId;
+    const agent2ThreadId = await createThread(ctx, components.agent, {
+      title: `${battle.agent2Name} - ${battle.theme}`,
+    });
+
+    // Randomly determine who goes first
+    const firstUserId =
+      Math.random() < POINT_FIVE ? battle.partner1UserId : user._id;
+    const turnStartTime = Date.now();
+    const turnDeadline = turnStartTime + TURN_DURATION_MS;
+
+    // Update battle
+    await ctx.db.patch(args.battleId, {
+      partner2UserId: user._id,
+      partner2Side,
+      agent1ThreadId,
+      agent2ThreadId,
+      waitingForPartner: false,
+      state: "in_progress",
+      currentTurnUserId: firstUserId,
+      currentTurnStartTime: turnStartTime,
+      currentTurnDeadline: turnDeadline,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule timeout enforcement
+    await ctx.scheduler.runAfter(
+      TURN_DURATION_MS,
+      internal.rapBattle.checkTurnTimeout,
+      {
+        battleId: args.battleId,
+        expectedUserId: firstUserId,
+        deadline: turnDeadline,
+      }
+    );
+
+    return null;
+  },
+});
+
+/**
+ * Submit instructions for current turn
+ */
+export const submitInstructions = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    instructions: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get current user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    // Verify it's this user's turn
+    if (battle.currentTurnUserId !== user._id) {
+      throw new Error("Not your turn");
+    }
+
+    // Check deadline hasn't passed
+    if (battle.currentTurnDeadline && Date.now() > battle.currentTurnDeadline) {
+      throw new Error("Turn deadline has passed");
+    }
+
+    // Store instructions temporarily in battle document
+    await ctx.db.patch(args.battleId, {
+      currentTurnUserId: undefined,
+      currentTurnStartTime: undefined,
+      currentTurnDeadline: undefined,
+      pendingInstructions: args.instructions,
+      pendingPartnerId: user._id,
+      updatedAt: Date.now(),
+    });
+
+    // Trigger agent generation
+    const agentName =
+      user._id === battle.partner1UserId
+        ? battle.partner1Side
+        : battle.partner2Side;
+    const threadId =
+      agentName === battle.agent1Name
+        ? battle.agent1ThreadId
+        : battle.agent2ThreadId;
+
+    if (!threadId) {
+      throw new Error("Thread not initialized");
+    }
+
+    // Get previous lyrics if any
+    const turns = await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
+
+    const previousTurn = turns
+      .filter((t) => t.agentName !== agentName)
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
+
+    await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
+      battleId: args.battleId,
+      agentName: agentName ?? "",
+      threadId,
+      roundNumber: battle.currentRound,
+      previousLyrics: previousTurn?.lyrics ?? null,
+      instructions: args.instructions,
+      partnerId: user._id,
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Check if turn timed out and auto-submit empty instructions
+ */
+export const checkTurnTimeout = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    expectedUserId: v.id("users"),
+    deadline: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      return null;
+    }
+
+    // Check if turn is still active and deadline matches
+    if (
+      battle.currentTurnUserId === args.expectedUserId &&
+      battle.currentTurnDeadline === args.deadline
+    ) {
+      // Timeout occurred, auto-submit empty instructions
+      await ctx.db.patch(args.battleId, {
+        currentTurnUserId: undefined,
+        currentTurnStartTime: undefined,
+        currentTurnDeadline: undefined,
+        pendingInstructions: "",
+        pendingPartnerId: args.expectedUserId,
+        updatedAt: Date.now(),
+      });
+
+      const agentName =
+        args.expectedUserId === battle.partner1UserId
+          ? battle.partner1Side
+          : battle.partner2Side;
+      const threadId =
+        agentName === battle.agent1Name
+          ? battle.agent1ThreadId
+          : battle.agent2ThreadId;
+
+      if (!threadId) {
+        return null;
+      }
+
+      // Get previous lyrics
+      const turns = await ctx.db
+        .query("turns")
+        .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+        .collect();
+
+      const previousTurn = turns
+        .filter((t) => t.agentName !== agentName)
+        .sort((a, b) => b.createdAt - a.createdAt)[0];
+
+      // Trigger with empty instructions
+      await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
+        battleId: args.battleId,
+        agentName: agentName ?? "",
+        threadId,
+        roundNumber: battle.currentRound,
+        previousLyrics: previousTurn?.lyrics ?? null,
+        instructions: "",
+        partnerId: args.expectedUserId,
+      });
+    }
+
+    return null;
   },
 });
 
@@ -140,16 +398,10 @@ export const executeRound = internalAction({
     threadId: v.string(),
     roundNumber: v.number(),
     previousLyrics: v.union(v.string(), v.null()),
+    instructions: v.string(),
+    partnerId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    // Update battle state to in_progress if it's the first round
-    if (args.roundNumber === 1) {
-      await ctx.runMutation(internal.rapBattle.updateBattleState, {
-        battleId: args.battleId,
-        state: "in_progress",
-      });
-    }
-
     // Get battle details
     const battle = await ctx.runQuery(internal.rapBattle.getBattleInternal, {
       battleId: args.battleId,
@@ -166,13 +418,18 @@ export const executeRound = internalAction({
       google("gemini-2.5-flash-lite-preview-09-2025")
     );
 
-    // Build the prompt
+    // Build the prompt with user's instructions
     let prompt = `This is a rap battle with the theme: "${battle.theme}"\n\n`;
+
+    if (args.instructions) {
+      prompt += `Your human partner gives you these instructions: "${args.instructions}"\n\n`;
+    }
+
     if (args.previousLyrics) {
-      prompt += `Your opponent just dropped this:\n\n${args.previousLyrics}\n\nNow it's your turn. Respond and destroy them by writing the lyrics and then calling generateMusicTool!`;
+      prompt += `Your opponent just dropped this:\n\n${args.previousLyrics}\n\nNow it's your turn. Use your partner's instructions to respond and destroy them by writing the lyrics and then calling generateMusicTool!`;
     } else {
       prompt +=
-        "You're going first. Write the opening lyrics and use generateMusicTool.";
+        "You're going first. Use your partner's instructions to write the opening lyrics and use generateMusicTool.";
     }
 
     // Save the prompt message
@@ -187,7 +444,7 @@ export const executeRound = internalAction({
       { threadId: args.threadId },
       { promptMessageId: messageId }
     );
-    // The music generation tool will handle saving the round and chaining to the next agent
+    // The music generation tool will handle saving the round and setting up next turn
   },
 });
 
@@ -196,25 +453,27 @@ export const updateBattleState = internalMutation({
   args: {
     battleId: v.id("rapBattles"),
     state: v.union(
+      v.literal("waiting_for_partner"),
       v.literal("preparing"),
       v.literal("in_progress"),
       v.literal("done")
     ),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.battleId, {
       state: args.state,
       updatedAt: Date.now(),
     });
+    return null;
   },
 });
-
-const MAX_ROUNDS = 1; // 3 rounds, each with 2 turns
 
 export const incrementBattleRound = internalMutation({
   args: {
     battleId: v.id("rapBattles"),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const battle = await ctx.db.get(args.battleId);
     if (!battle) {
@@ -248,6 +507,8 @@ export const incrementBattleRound = internalMutation({
         });
       }
     }
+
+    return null;
   },
 });
 
@@ -257,21 +518,106 @@ export const saveTurn = internalMutation({
     roundNumber: v.number(),
     turnNumber: v.number(),
     agentName: v.string(),
+    partnerId: v.id("users"),
+    instructions: v.string(),
     lyrics: v.string(),
     musicTrackId: v.id("musicTracks"),
     threadId: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.insert("turns", {
       rapBattleId: args.rapBattleId,
       roundNumber: args.roundNumber,
       turnNumber: args.turnNumber,
       agentName: args.agentName,
+      partnerId: args.partnerId,
+      instructions: args.instructions,
+      instructionSubmittedAt: Date.now(),
       lyrics: args.lyrics,
       musicTrackId: args.musicTrackId,
       threadId: args.threadId,
       createdAt: Date.now(),
     });
+    return null;
+  },
+});
+
+/**
+ * Clear pending instructions after turn is saved
+ */
+export const clearPendingInstructions = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.battleId, {
+      pendingInstructions: undefined,
+      pendingPartnerId: undefined,
+    });
+    return null;
+  },
+});
+
+/**
+ * Set up next partner's turn after music generation
+ */
+export const setupNextTurn = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle || battle.state === "done") {
+      return null;
+    }
+
+    // Get all turns to determine whose turn is next
+    const turns = await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
+
+    const lastTurn = turns.sort((a, b) => b.createdAt - a.createdAt)[0];
+
+    if (!lastTurn) {
+      return null;
+    }
+
+    // Determine next user
+    const nextUserId =
+      lastTurn.partnerId === battle.partner1UserId
+        ? battle.partner2UserId
+        : battle.partner1UserId;
+
+    if (!nextUserId) {
+      return null;
+    }
+
+    const turnStartTime = Date.now();
+    const turnDeadline = turnStartTime + TURN_DURATION_MS;
+
+    await ctx.db.patch(args.battleId, {
+      currentTurnUserId: nextUserId,
+      currentTurnStartTime: turnStartTime,
+      currentTurnDeadline: turnDeadline,
+      updatedAt: Date.now(),
+    });
+
+    // Schedule timeout
+    await ctx.scheduler.runAfter(
+      TURN_DURATION_MS,
+      internal.rapBattle.checkTurnTimeout,
+      {
+        battleId: args.battleId,
+        expectedUserId: nextUserId,
+        deadline: turnDeadline,
+      }
+    );
+
+    return null;
   },
 });
 
@@ -279,6 +625,7 @@ export const getBattle = query({
   args: {
     battleId: v.id("rapBattles"),
   },
+  returns: v.any(),
   handler: async (ctx, args) => ctx.db.get(args.battleId),
 });
 
@@ -286,6 +633,7 @@ export const getBattleInternal = internalQuery({
   args: {
     battleId: v.id("rapBattles"),
   },
+  returns: v.any(),
   handler: async (ctx, args) => ctx.db.get(args.battleId),
 });
 
@@ -293,6 +641,7 @@ export const getBattleByThreadId = internalQuery({
   args: {
     threadId: v.string(),
   },
+  returns: v.any(),
   handler: async (ctx, args) => {
     const battles = await ctx.db.query("rapBattles").collect();
     return battles.find(
@@ -308,6 +657,7 @@ export const getTurnsByBattle = query({
   args: {
     battleId: v.id("rapBattles"),
   },
+  returns: v.any(),
   handler: async (ctx, args) =>
     await ctx.db
       .query("turns")
@@ -319,6 +669,7 @@ export const getTurnsInternal = internalQuery({
   args: {
     battleId: v.id("rapBattles"),
   },
+  returns: v.any(),
   handler: async (ctx, args) =>
     await ctx.db
       .query("turns")
@@ -326,11 +677,76 @@ export const getTurnsInternal = internalQuery({
       .collect(),
 });
 
+/**
+ * List all battles
+ */
 export const listBattles = query({
   args: {},
+  returns: v.any(),
   handler: async (ctx) => {
     const battles = await ctx.db.query("rapBattles").order("desc").collect();
     return battles;
+  },
+});
+
+/**
+ * Get battles for a specific theme
+ */
+export const getBattlesForTheme = query({
+  args: {
+    themeId: v.id("themes"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const battles = await ctx.db
+      .query("rapBattles")
+      .withIndex("by_theme", (q) => q.eq("themeId", args.themeId))
+      .order("desc")
+      .collect();
+    return battles;
+  },
+});
+
+/**
+ * Get waiting battles for a theme
+ */
+export const getWaitingBattles = query({
+  args: {
+    themeId: v.id("themes"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const battles = await ctx.db
+      .query("rapBattles")
+      .withIndex("by_theme", (q) => q.eq("themeId", args.themeId))
+      .collect();
+
+    return battles.filter((b) => b.waitingForPartner);
+  },
+});
+
+/**
+ * Get current turn info
+ */
+export const getCurrentTurnInfo = query({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      return null;
+    }
+
+    return {
+      currentTurnUserId: battle.currentTurnUserId,
+      currentTurnStartTime: battle.currentTurnStartTime,
+      currentTurnDeadline: battle.currentTurnDeadline,
+      timeRemaining: battle.currentTurnDeadline
+        ? Math.max(0, battle.currentTurnDeadline - Date.now())
+        : 0,
+    };
   },
 });
 
@@ -338,6 +754,7 @@ export const getMusicTrack = query({
   args: {
     trackId: v.id("musicTracks"),
   },
+  returns: v.any(),
   handler: async (ctx, args) => {
     const track = await ctx.db.get(args.trackId);
     if (!track) {

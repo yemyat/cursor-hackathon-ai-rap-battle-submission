@@ -1,6 +1,9 @@
 import type { RefObject } from "react";
+import { useMutation } from "convex/react";
 import { Button } from "@/components/ui/button";
 import type { Turn } from "./turn-card";
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 type AudioPlayerProps = {
   audioRef: RefObject<HTMLAudioElement>;
@@ -16,6 +19,8 @@ type AudioPlayerProps = {
   onAudioPause: () => void;
   onPlayAgent1: () => void;
   onPlayAgent2: () => void;
+  battleId: Id<"rapBattles">;
+  isCheerleader: boolean;
 };
 
 export function AudioPlayer({
@@ -32,7 +37,20 @@ export function AudioPlayer({
   onAudioPause,
   onPlayAgent1,
   onPlayAgent2,
+  battleId,
+  isCheerleader,
 }: AudioPlayerProps) {
+  const sendCheer = useMutation(api.cheers.sendCheer);
+
+  const handleCheer = async (
+    cheerType: "applause" | "boo" | "fire"
+  ) => {
+    try {
+      await sendCheer({ battleId, cheerType });
+    } catch (error) {
+      console.error("Failed to send cheer:", error);
+    }
+  };
   return (
     <div className="fixed right-0 bottom-0 left-0 z-50 border-tokyo-terminal/50 border-t bg-tokyo-bgDark/95 p-4 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
@@ -95,6 +113,36 @@ export function AudioPlayer({
           >
             Play {agent2Name}
           </Button>
+
+          {isCheerleader && (
+            <>
+              <div className="mx-2 w-px bg-tokyo-terminal/50" />
+              <Button
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-green/60 hover:bg-tokyo-terminal hover:text-tokyo-green focus-visible:ring-2 focus-visible:ring-tokyo-green/50"
+                onClick={() => handleCheer("applause")}
+                title="Applause"
+                variant="outline"
+              >
+                👏
+              </Button>
+              <Button
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-orange/60 hover:bg-tokyo-terminal hover:text-tokyo-orange focus-visible:ring-2 focus-visible:ring-tokyo-orange/50"
+                onClick={() => handleCheer("fire")}
+                title="Fire"
+                variant="outline"
+              >
+                🔥
+              </Button>
+              <Button
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-2 text-lg backdrop-blur-sm transition-all duration-200 hover:border-tokyo-red/60 hover:bg-tokyo-terminal hover:text-tokyo-red focus-visible:ring-2 focus-visible:ring-tokyo-red/50"
+                onClick={() => handleCheer("boo")}
+                title="Boo"
+                variant="outline"
+              >
+                👎
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

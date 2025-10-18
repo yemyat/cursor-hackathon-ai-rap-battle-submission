@@ -146,8 +146,10 @@ export const generateMusic = internalAction({
   handler: async (
     ctx,
     args
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: <ignore>
-  ): Promise<{ storageUrl: string; trackId: Id<"musicTracks"> }> => {
+  ): Promise<{
+    storageUrl: string;
+    trackId: Id<"musicTracks">;
+  }> => {
     // Step 1: Create composition plan
     const { compositionPlan, compositionPlanId } = await ctx.runAction(
       internal.agents.tools.generateMusic.generateCompositionPlan,
@@ -182,7 +184,7 @@ export const generateMusic = internalAction({
         throw new Error("Battle not found");
       }
 
-      // Get all turns to determine turn number
+      // Get all turns to determine turn number and partner
       const turns = await ctx.runQuery(internal.rapBattle.getTurnsInternal, {
         battleId: args.battleId,
       });
@@ -193,12 +195,22 @@ export const generateMusic = internalAction({
 
       const turnNumber = currentRoundTurns.length + 1;
 
+      // Get pending instructions and partner from battle document
+      const instructions = battle.pendingInstructions ?? "";
+      const partnerId = battle.pendingPartnerId;
+
+      if (!partnerId) {
+        throw new Error("No pending partner ID found for this turn");
+      }
+
       // Save this turn
       await ctx.runMutation(internal.rapBattle.saveTurn, {
         rapBattleId: args.battleId,
         roundNumber: battle.currentRound,
         turnNumber,
         agentName: args.agentName,
+        partnerId,
+        instructions,
         lyrics: args.lyrics,
         musicTrackId: trackId,
         threadId: args.threadId,
@@ -209,7 +221,7 @@ export const generateMusic = internalAction({
         battleId: args.battleId,
       });
 
-      // Check if we need to invoke the next agent
+      // Check if battle is done
       const updatedBattle = await ctx.runQuery(
         internal.rapBattle.getBattleInternal,
         {
@@ -221,35 +233,15 @@ export const generateMusic = internalAction({
         return { storageUrl, trackId };
       }
 
-      // Determine if round changed
-      const roundChanged = updatedBattle.currentRound > battle.currentRound;
+      // Clear pending instructions
+      await ctx.runMutation(internal.rapBattle.clearPendingInstructions, {
+        battleId: args.battleId,
+      });
 
-      if (roundChanged) {
-        // Round completed, start new round with agent1
-        // Pass agent2's lyrics (the current turn) as context
-        await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
-          battleId: args.battleId,
-          agentName: battle.agent1Name,
-          threadId: battle.agent1ThreadId,
-          roundNumber: updatedBattle.currentRound,
-          previousLyrics: args.lyrics,
-        });
-      } else if (turnNumber === 1) {
-        // We just saved turn 1, schedule turn 2 for the other agent
-        const isAgent1 = args.agentName === battle.agent1Name;
-        const nextAgentName = isAgent1 ? battle.agent2Name : battle.agent1Name;
-        const nextThreadId = isAgent1
-          ? battle.agent2ThreadId
-          : battle.agent1ThreadId;
-
-        await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
-          battleId: args.battleId,
-          agentName: nextAgentName,
-          threadId: nextThreadId,
-          roundNumber: battle.currentRound,
-          previousLyrics: args.lyrics,
-        });
-      }
+      // Set up next partner's turn (they have 10 seconds to submit instructions)
+      await ctx.runMutation(internal.rapBattle.setupNextTurn, {
+        battleId: args.battleId,
+      });
     }
 
     return { storageUrl, trackId };

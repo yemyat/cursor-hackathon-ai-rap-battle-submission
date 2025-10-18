@@ -3,6 +3,8 @@ import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AudioPlayer } from "@/components/battle/audio-player";
+import { CheerDisplay } from "@/components/battle/cheer-display";
+import { InstructionInput } from "@/components/battle/instruction-input";
 import { TurnCard } from "@/components/battle/turn-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,13 @@ function BattleView() {
     battleId: battleId as Id<"rapBattles">,
   });
 
+  const currentUser = useQuery(api.users.getCurrentUser);
+
   const turns = useQuery(api.rapBattle.getTurnsByBattle, {
+    battleId: battleId as Id<"rapBattles">,
+  });
+
+  const currentTurnInfo = useQuery(api.rapBattle.getCurrentTurnInfo, {
     battleId: battleId as Id<"rapBattles">,
   });
 
@@ -54,6 +62,21 @@ function BattleView() {
     api.rapBattle.getMusicTrack,
     currentTurn ? { trackId: currentTurn.musicTrackId } : "skip"
   );
+
+  // Determine user role
+  const isPartner1 = currentUser && battle?.partner1UserId === currentUser._id;
+  const isPartner2 = currentUser && battle?.partner2UserId === currentUser._id;
+  const isRappingPartner = isPartner1 || isPartner2;
+  const isCheerleader = currentUser && !isRappingPartner;
+  const isYourTurn =
+    currentUser && battle?.currentTurnUserId === currentUser._id;
+
+  // Determine which agent the current user controls
+  const yourAgentName = isPartner1
+    ? battle?.partner1Side
+    : isPartner2
+      ? battle?.partner2Side
+      : undefined;
 
   // Audio event handlers
   const handleAudioEnded = () => {
@@ -127,6 +150,50 @@ function BattleView() {
     );
   }
 
+  // Waiting for partner state
+  if (battle.state === "waiting_for_partner") {
+    return (
+      <div className="relative min-h-screen bg-zinc-950 p-6">
+        <div className="mesh-hero -z-10 animate-mesh-pan" />
+
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-10">
+            <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
+              {battle.theme}
+            </h1>
+            <p className="text-[15px] text-tokyo-comment">
+              You're playing as {isPartner1 ? battle.partner1Side : "..."}
+            </p>
+          </div>
+
+          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+            <CardContent className="py-16 text-center">
+              <div className="relative inline-block">
+                <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
+                <div className="mb-4 text-4xl">⏳</div>
+                <p className="mb-2 font-semibold text-xl text-tokyo-fg">
+                  Waiting for opponent...
+                </p>
+                <p className="text-sm text-tokyo-comment">
+                  Share this battle link with someone to start!
+                </p>
+                <Button
+                  className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                  }}
+                  variant="outline"
+                >
+                  Copy Battle Link
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Calculate total rounds that have at least one turn
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
@@ -165,6 +232,11 @@ function BattleView() {
               {battle.agent1Name} <span className="text-tokyo-fgDark">vs</span>{" "}
               {battle.agent2Name}
             </p>
+            {isRappingPartner && yourAgentName && (
+              <p className="mt-1 text-sm text-tokyo-cyan">
+                You're controlling {yourAgentName}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2.5">
             <Badge
@@ -181,6 +253,18 @@ function BattleView() {
             </Badge>
           </div>
         </div>
+
+        {/* Instruction Input (only visible to rapping partners) */}
+        {isRappingPartner && battle.state === "in_progress" && (
+          <div className="mb-6">
+            <InstructionInput
+              agentName={yourAgentName ?? ""}
+              battleId={battle._id}
+              deadline={currentTurnInfo?.currentTurnDeadline}
+              isYourTurn={isYourTurn ?? false}
+            />
+          </div>
+        )}
 
         <div className="mt-10 flex items-center justify-center gap-3">
           <Button
@@ -211,65 +295,73 @@ function BattleView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-5">
-          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-tokyo-blue shadow-[0_0_8px_rgba(122,162,247,0.6)]" />
-                <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
-                  {battle.agent1Name}
-                </CardTitle>
-              </div>
-            </CardHeader>
-          </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-5">
+              <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-tokyo-blue shadow-[0_0_8px_rgba(122,162,247,0.6)]" />
+                    <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
+                      {battle.agent1Name}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+              </Card>
 
-          {agent1Turn ? (
-            <TurnCard
-              agentColor="blue"
-              isPlaying={currentlyPlayingTurn === agent1Turn._id}
-              turn={agent1Turn}
-            />
-          ) : (
-            <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
-              <CardContent className="py-16 text-center">
-                <div className="relative inline-block">
-                  <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-                  <p className="text-tokyo-comment">Waiting for verse...</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              {agent1Turn ? (
+                <TurnCard
+                  agentColor="blue"
+                  isPlaying={currentlyPlayingTurn === agent1Turn._id}
+                  turn={agent1Turn}
+                />
+              ) : (
+                <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+                  <CardContent className="py-16 text-center">
+                    <div className="relative inline-block">
+                      <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
+                      <p className="text-tokyo-comment">Waiting for verse...</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-5">
+              <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-tokyo-magenta shadow-[0_0_8px_rgba(187,154,247,0.6)]" />
+                    <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
+                      {battle.agent2Name}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {agent2Turn ? (
+                <TurnCard
+                  agentColor="magenta"
+                  isPlaying={currentlyPlayingTurn === agent2Turn._id}
+                  turn={agent2Turn}
+                />
+              ) : (
+                <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
+                  <CardContent className="py-16 text-center">
+                    <div className="relative inline-block">
+                      <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
+                      <p className="text-tokyo-comment">Waiting for verse...</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-5">
-          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-tokyo-magenta shadow-[0_0_8px_rgba(187,154,247,0.6)]" />
-                <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
-                  {battle.agent2Name}
-                </CardTitle>
-              </div>
-            </CardHeader>
-          </Card>
-
-          {agent2Turn ? (
-            <TurnCard
-              agentColor="magenta"
-              isPlaying={currentlyPlayingTurn === agent2Turn._id}
-              turn={agent2Turn}
-            />
-          ) : (
-            <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
-              <CardContent className="py-16 text-center">
-                <div className="relative inline-block">
-                  <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-                  <p className="text-tokyo-comment">Waiting for verse...</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <div className="lg:col-span-1">
+          <CheerDisplay battleId={battle._id} />
         </div>
       </div>
 
@@ -279,9 +371,11 @@ function BattleView() {
         agent2Name={battle.agent2Name}
         agent2Turn={agent2Turn}
         audioRef={audioRef}
+        battleId={battle._id}
         currentTurn={currentTurn ?? null}
         hasAgent1Track={agent1Track !== undefined}
         hasAgent2Track={agent2Track !== undefined}
+        isCheerleader={isCheerleader ?? false}
         onAudioEnded={handleAudioEnded}
         onAudioPause={handleAudioPause}
         onAudioPlay={handleAudioPlay}
