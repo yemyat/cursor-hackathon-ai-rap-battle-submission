@@ -10,6 +10,7 @@ type BattleLayoutProps = {
   agent2Turn: Doc<"turns"> | undefined;
   agent2IsPlaying: boolean;
   battleId: Id<"rapBattles">;
+  yourAgentName?: string;
 };
 
 export function BattleLayout({
@@ -20,6 +21,7 @@ export function BattleLayout({
   agent2Turn,
   agent2IsPlaying,
   battleId,
+  yourAgentName,
 }: BattleLayoutProps) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -29,6 +31,7 @@ export function BattleLayout({
             agentColor="blue"
             agentName={agent1Name}
             isPlaying={agent1IsPlaying}
+            isYourAgent={yourAgentName === agent1Name}
             turn={agent1Turn}
           />
 
@@ -36,6 +39,7 @@ export function BattleLayout({
             agentColor="magenta"
             agentName={agent2Name}
             isPlaying={agent2IsPlaying}
+            isYourAgent={yourAgentName === agent2Name}
             turn={agent2Turn}
           />
         </div>

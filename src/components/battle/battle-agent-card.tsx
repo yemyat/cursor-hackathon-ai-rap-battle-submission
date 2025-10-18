@@ -7,6 +7,7 @@ type BattleAgentCardProps = {
   agentColor: "blue" | "magenta";
   turn: Doc<"turns"> | undefined;
   isPlaying: boolean;
+  isYourAgent: boolean;
 };
 
 export function BattleAgentCard({
@@ -14,6 +15,7 @@ export function BattleAgentCard({
   agentColor,
   turn,
   isPlaying,
+  isYourAgent,
 }: BattleAgentCardProps) {
   return (
     <div>
@@ -22,6 +24,7 @@ export function BattleAgentCard({
           agentColor={agentColor}
           agentName={agentName}
           isPlaying={isPlaying}
+          isYourAgent={isYourAgent}
           turn={turn}
         />
       ) : (
@@ -29,6 +32,9 @@ export function BattleAgentCard({
           <CardContent className="py-16 text-center">
             <p className="mb-2 font-bold text-brand-coral text-xl">
               {agentName}
+              {isYourAgent && (
+                <span className="ml-2 text-base text-white/70">(You)</span>
+              )}
             </p>
             <p className="text-lg text-white/60">Waiting for verse...</p>
           </CardContent>

@@ -8,7 +8,7 @@ export type Turn = {
   turnNumber: number;
   agentName: string;
   lyrics: string;
-  musicTrackId: Id<"musicTracks">;
+  musicTrackId?: Id<"musicTracks">;
   threadId: string;
 };
 
@@ -17,6 +17,7 @@ type TurnCardProps = {
   isPlaying: boolean;
   agentColor: "blue" | "magenta";
   agentName: string;
+  isYourAgent: boolean;
 };
 
 export function TurnCard({
@@ -24,6 +25,7 @@ export function TurnCard({
   isPlaying,
   agentColor,
   agentName,
+  isYourAgent,
 }: TurnCardProps) {
   const ringColor =
     agentColor === "blue" ? "ring-brand-coral/60" : "ring-brand-coralLight/60";
@@ -37,7 +39,12 @@ export function TurnCard({
     <Card className={cardClassName}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-2xl text-brand-coral">{agentName}</h3>
+          <h3 className="font-bold text-2xl text-brand-coral">
+            {agentName}
+            {isYourAgent && (
+              <span className="ml-2 text-base text-white/70">(You)</span>
+            )}
+          </h3>
           <Badge
             className="rounded-md border-brand-coral/40 bg-brand-coral/10 px-3 py-1 font-semibold text-brand-coral text-xs uppercase tracking-wider"
             variant="outline"

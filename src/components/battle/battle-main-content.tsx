@@ -76,6 +76,7 @@ export function BattleMainContent({
         agent2Name={battle.agent2Name}
         agent2Turn={agent2Turn}
         battleId={battle._id}
+        yourAgentName={yourAgentName}
       />
     </div>
   );
