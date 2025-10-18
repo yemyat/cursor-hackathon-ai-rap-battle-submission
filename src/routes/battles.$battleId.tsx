@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useRef } from "react";
-import { toast } from "sonner";
 import { AudioPlayer } from "@/components/battle/audio-player";
 import { AudioSync } from "@/components/battle/audio-sync";
 import { BattleHeader } from "@/components/battle/battle-header";
+import { BattleStatus } from "@/components/battle/battle-status";
 import { CheerDisplay } from "@/components/battle/cheer-display";
 import { InstructionInput } from "@/components/battle/instruction-input";
-import { RoundSelector } from "@/components/battle/round-selector";
 import { TurnCard } from "@/components/battle/turn-card";
 import { WaitingForPartner } from "@/components/battle/waiting-for-partner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,11 +36,9 @@ function BattleView() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const joinBattle = useMutation(api.rapBattle.joinBattle);
-  const setPlayingTurn = useMutation(api.rapBattle.setPlayingTurn);
-  const setActiveRound = useMutation(api.rapBattle.setActiveRound);
 
-  // Use Convex-controlled state instead of local state
-  const selectedRound = battle?.activeRound ?? 1;
+  // Use Convex-controlled state from workflow
+  const selectedRound = battle?.currentRound ?? 1;
   const currentlyPlayingTurn = battle?.currentlyPlayingTurnId ?? null;
 
   // Get turns for the selected round
@@ -85,51 +82,6 @@ function BattleView() {
     yourAgentName = battle?.partner2Side;
   }
 
-  // Handle round change
-  const handleRoundChange = async (newRound: number) => {
-    if (!battle) {
-      return;
-    }
-    try {
-      await setActiveRound({
-        battleId: battle._id,
-        roundNumber: newRound,
-      });
-    } catch {
-      toast.error("Failed to change round");
-    }
-  };
-
-  // Handle play agent buttons
-  const handlePlayAgent = async (turnId: Id<"turns">) => {
-    if (!battle) {
-      return;
-    }
-    try {
-      await setPlayingTurn({
-        battleId: battle._id,
-        turnId,
-      });
-    } catch {
-      toast.error("Failed to start playback");
-    }
-  };
-
-  // Handle pause
-  const handlePause = async () => {
-    if (!battle) {
-      return;
-    }
-    try {
-      await setPlayingTurn({
-        battleId: battle._id,
-        turnId: null,
-      });
-    } catch {
-      toast.error("Failed to pause");
-    }
-  };
-
   if (!battle) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -158,15 +110,14 @@ function BattleView() {
     );
   }
 
-  // Calculate total rounds that have at least one turn
-  const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
-
   return (
     <div className="relative min-h-screen bg-zinc-950 p-6 pb-32">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
       {/* Hidden audio element controlled by AudioSync */}
-      <audio ref={audioRef} />
+      <audio ref={audioRef}>
+        <track kind="captions" />
+      </audio>
 
       {/* AudioSync handles server-synchronized playback */}
       <AudioSync
@@ -174,7 +125,7 @@ function BattleView() {
         playbackDuration={battle.playbackDuration}
         playbackStartedAt={battle.playbackStartedAt}
         playbackState={battle.playbackState}
-        trackUrl={currentTrack?.storageUrl}
+        trackUrl={currentTrack?.storageUrl ?? undefined}
       />
 
       <div className="mb-10">
@@ -189,6 +140,21 @@ function BattleView() {
           yourAgentName={yourAgentName ?? undefined}
         />
 
+        {/* Battle Status Indicator */}
+        <div className="mb-6">
+          <BattleStatus
+            agent1Name={battle.agent1Name}
+            agent2Name={battle.agent2Name}
+            battleState={battle.state}
+            currentlyPlayingAgentName={currentTurn?.agentName ?? undefined}
+            currentRound={battle.currentRound}
+            currentTurnUserId={battle.currentTurnUserId}
+            currentUserId={currentUser?._id}
+            partner1UserId={battle.partner1UserId}
+            playbackState={battle.playbackState}
+          />
+        </div>
+
         {/* Instruction Input (only visible to rapping partners) */}
         {isRappingPartner && battle.state === "in_progress" && (
           <div className="mb-6">
@@ -200,12 +166,6 @@ function BattleView() {
             />
           </div>
         )}
-
-        <RoundSelector
-          maxRound={maxRound}
-          onRoundChange={handleRoundChange}
-          selectedRound={selectedRound}
-        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -281,7 +241,7 @@ function BattleView() {
         </div>
       </div>
 
-      {/* Audio Player */}
+      {/* Audio Player - Display Only (controlled by workflow) */}
       <AudioPlayer
         agent1Name={battle.agent1Name}
         agent1Turn={agent1Turn}
@@ -294,22 +254,16 @@ function BattleView() {
         hasAgent2Track={agent2Track !== undefined}
         isCheerleader={isCheerleader ?? false}
         onAudioEnded={() => {
-          // AudioSync handles this automatically via server
+          // Workflow handles progression automatically
         }}
-        onAudioPause={handlePause}
+        onAudioPause={() => {
+          // Workflow controls playback
+        }}
         onAudioPlay={() => {
-          // AudioSync handles this automatically via server
+          // Workflow controls playback
         }}
-        onPlayAgent1={async () => {
-          if (agent1Turn) {
-            await handlePlayAgent(agent1Turn._id);
-          }
-        }}
-        onPlayAgent2={async () => {
-          if (agent2Turn) {
-            await handlePlayAgent(agent2Turn._id);
-          }
-        }}
+        onPlayAgent1={undefined}
+        onPlayAgent2={undefined}
       />
     </div>
   );

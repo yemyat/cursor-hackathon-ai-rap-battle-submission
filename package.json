@@ -19,6 +19,7 @@
     "@ai-sdk/openai": "^2.0.52",
     "@clerk/clerk-react": "^5.20.0",
     "@convex-dev/agent": "^0.2.10",
+    "@convex-dev/workflow": "^0.2.7",
     "@elevenlabs/elevenlabs-js": "^2.19.0",
     "@fal-ai/client": "^1.7.0",
     "@fal-ai/serverless-client": "^0.15.0",

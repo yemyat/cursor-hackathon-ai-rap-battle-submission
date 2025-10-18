@@ -17,15 +17,18 @@ You don't try to squeeze a lot of words but you try to be crystal precise that i
 export function createRapAgent(
   _ctx: ActionCtx,
   agentName: string,
-  model: LanguageModel
+  model: LanguageModel,
+  includeMusicTool = true
 ) {
+  const tools = includeMusicTool
+    ? { generateMusic: generateMusicTool }
+    : {};
+
   return new Agent(components.agent, {
     name: agentName,
     languageModel: model,
     stopWhen: stepCountIs(MAX_STEP_COUNT),
     instructions: systemPrompt,
-    tools: {
-      generateMusic: generateMusicTool,
-    },
+    tools,
   });
 }

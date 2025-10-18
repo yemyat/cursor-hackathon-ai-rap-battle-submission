@@ -218,16 +218,14 @@ export const joinBattle = mutation({
       updatedAt: Date.now(),
     });
 
-    // Schedule timeout enforcement
-    await ctx.scheduler.runAfter(
-      TURN_DURATION_MS,
-      internal.rapBattle.checkTurnTimeout,
-      {
-        battleId: args.battleId,
-        expectedUserId: firstUserId,
-        deadline: turnDeadline,
-      }
-    );
+    // Start the battle workflow
+    await ctx.scheduler.runAfter(0, internal.startBattleWorkflow.start, {
+      battleId: args.battleId,
+      agent1ThreadId,
+      agent2ThreadId,
+      partner1UserId: battle.partner1UserId,
+      partner2UserId: user._id,
+    });
 
     return null;
   },

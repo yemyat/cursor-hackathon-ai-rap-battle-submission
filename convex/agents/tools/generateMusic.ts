@@ -190,7 +190,7 @@ export const generateMusic = internalAction({
       });
 
       const currentRoundTurns = turns.filter(
-        (t) => t.roundNumber === battle.currentRound
+        (t: { roundNumber: number }) => t.roundNumber === battle.currentRound
       );
 
       const turnNumber = currentRoundTurns.length + 1;

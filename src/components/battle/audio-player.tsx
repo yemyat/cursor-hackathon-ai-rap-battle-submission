@@ -18,8 +18,8 @@ type AudioPlayerProps = {
   onAudioEnded: () => void;
   onAudioPlay: () => void;
   onAudioPause: () => void;
-  onPlayAgent1: () => void;
-  onPlayAgent2: () => void;
+  onPlayAgent1?: () => void;
+  onPlayAgent2?: () => void;
   battleId: Id<"rapBattles">;
   isCheerleader: boolean;
 };
@@ -83,9 +83,15 @@ export function AudioPlayer({
             <div className="flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-tokyo-terminal" />
               <p className="text-sm text-tokyo-comment">
-                {agent1Turn || agent2Turn
-                  ? "Click play to start"
-                  : "Waiting for verses..."}
+                {(() => {
+                  if (onPlayAgent1 && (agent1Turn || agent2Turn)) {
+                    return "Click play to start";
+                  }
+                  if (agent1Turn || agent2Turn) {
+                    return "Auto-playing...";
+                  }
+                  return "Waiting for verses...";
+                })()}
               </p>
             </div>
           )}
@@ -102,22 +108,33 @@ export function AudioPlayer({
         </audio>
 
         <div className="flex gap-2">
-          <Button
-            className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 text-sm text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={agent1Turn === undefined || !hasAgent1Track}
-            onClick={onPlayAgent1}
-            variant="outline"
-          >
-            Play {agent1Name}
-          </Button>
-          <Button
-            className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 text-sm text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-magenta/60 hover:bg-tokyo-terminal hover:text-tokyo-magenta focus-visible:ring-2 focus-visible:ring-tokyo-magenta/50 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={agent2Turn === undefined || !hasAgent2Track}
-            onClick={onPlayAgent2}
-            variant="outline"
-          >
-            Play {agent2Name}
-          </Button>
+          {onPlayAgent1 && onPlayAgent2 ? (
+            <>
+              <Button
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 text-sm text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={agent1Turn === undefined || !hasAgent1Track}
+                onClick={onPlayAgent1}
+                variant="outline"
+              >
+                Play {agent1Name}
+              </Button>
+              <Button
+                className="rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 text-sm text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-magenta/60 hover:bg-tokyo-terminal hover:text-tokyo-magenta focus-visible:ring-2 focus-visible:ring-tokyo-magenta/50 disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={agent2Turn === undefined || !hasAgent2Track}
+                onClick={onPlayAgent2}
+                variant="outline"
+              >
+                Play {agent2Name}
+              </Button>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 backdrop-blur-sm">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-tokyo-green" />
+              <span className="text-sm text-tokyo-comment">
+                Workflow Auto-Play
+              </span>
+            </div>
+          )}
 
           {isCheerleader && (
             <>
