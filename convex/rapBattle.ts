@@ -354,6 +354,21 @@ export const listBattles = query({
 });
 
 /**
+ * Count completed battles
+ */
+export const countCompletedBattles = query({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const battles = await ctx.db
+      .query("rapBattles")
+      .filter((q) => q.eq(q.field("state"), "done"))
+      .collect();
+    return battles.length;
+  },
+});
+
+/**
  * Get battles for a specific theme with creator info
  */
 export const getBattlesForTheme = query({

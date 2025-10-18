@@ -47,7 +47,7 @@ module.exports = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
+          DEFAULT: "#EB7A63",
           foreground: "hsl(var(--accent-foreground))",
         },
         popover: {

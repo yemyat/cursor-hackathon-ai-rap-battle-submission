@@ -11,6 +11,7 @@ export const Route = createFileRoute("/battles/")({
 
 function ThemesList() {
   const themes = useQuery(api.themes.listThemes);
+  const completedBattlesCount = useQuery(api.rapBattle.countCompletedBattles);
   const createBattle = useMutation(api.rapBattle.createBattle);
   const navigate = useNavigate();
 
@@ -62,7 +63,7 @@ function ThemesList() {
             <div className="mx-auto grid max-w-4xl gap-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-8 backdrop-blur-sm md:grid-cols-3">
               <div className="text-center">
                 <div className="mb-2 font-bold text-3xl text-brand-coral md:text-4xl">
-                  ∞
+                  {completedBattlesCount ?? 0}
                 </div>
                 <div className="font-medium text-sm text-zinc-400 uppercase tracking-wider">
                   Battles Fought

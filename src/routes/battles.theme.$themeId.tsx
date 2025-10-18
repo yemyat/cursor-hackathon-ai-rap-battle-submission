@@ -78,24 +78,25 @@ function ThemeBattlesPage() {
       <div className="relative z-10 px-6 py-12">
         <div className="mb-12">
           <Link to="/battles">
-            <Button
-              className="mb-6 text-zinc-400 hover:text-zinc-300"
-              variant="ghost"
-            >
-              ← Back to Themes
-            </Button>
+            <Button variant="ghost">← Back to Themes</Button>
           </Link>
 
           <div className="text-center">
             <h1 className="mb-4 bg-gradient-to-r from-brand-coral via-brand-coralLight to-brand-coral bg-clip-text font-bold text-5xl text-transparent tracking-[-0.02em] md:text-6xl">
               {theme.name}
             </h1>
-            <p className="mx-auto max-w-2xl text-lg text-white/90 md:text-xl">{theme.description}</p>
+            <p className="mx-auto max-w-2xl text-lg text-white/90 md:text-xl">
+              {theme.description}
+            </p>
 
             <div className="mt-6 flex items-center justify-center gap-4">
-              <span className="font-bold text-2xl text-brand-coral">{theme.side1Name}</span>
-              <span className="font-bold text-sm text-brand-coral/60">VS</span>
-              <span className="font-bold text-2xl text-brand-coral">{theme.side2Name}</span>
+              <span className="font-bold text-2xl text-brand-coral">
+                {theme.side1Name}
+              </span>
+              <span className="font-bold text-brand-coral/60 text-sm">VS</span>
+              <span className="font-bold text-2xl text-brand-coral">
+                {theme.side2Name}
+              </span>
             </div>
 
             {/* Decorative line */}
@@ -105,7 +106,7 @@ function ThemeBattlesPage() {
 
         <div className="mb-12 text-center">
           <Button
-            className="h-14 px-12 border-0 bg-brand-coral font-bold text-xl text-white hover:bg-brand-coralDark shadow-lg shadow-brand-coral/30 hover:shadow-xl hover:shadow-brand-coral/40 transition-all"
+            className="h-14 border-0 bg-brand-coral px-12 font-bold text-white text-xl shadow-brand-coral/30 shadow-lg transition-all hover:bg-brand-coralDark hover:shadow-brand-coral/40 hover:shadow-xl"
             onClick={handleCreateBattle}
             size="lg"
           >
@@ -114,79 +115,79 @@ function ThemeBattlesPage() {
         </div>
 
         {battles === undefined ? (
-        <div className="py-12 text-center">
-          <p className="text-zinc-400">Loading battles...</p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {waitingBattles.length > 0 && (
-            <section>
-              <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
-                Waiting for Partner ({waitingBattles.length})
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {waitingBattles.map((battle) => (
-                  <BattleThemeCard
-                    battle={battle}
-                    currentUserId={currentUser?._id}
-                    key={battle._id}
-                    onJoin={handleJoinBattle}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+          <div className="py-12 text-center">
+            <p className="text-zinc-400">Loading battles...</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {waitingBattles.length > 0 && (
+              <section>
+                <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
+                  Waiting for Partner ({waitingBattles.length})
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {waitingBattles.map((battle) => (
+                    <BattleThemeCard
+                      battle={battle}
+                      currentUserId={currentUser?._id}
+                      key={battle._id}
+                      onJoin={handleJoinBattle}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {otherBattles.length > 0 && (
-            <section>
-              <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
-                Active Battles ({otherBattles.length})
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {otherBattles.map((battle) => (
-                  <BattleThemeCard
-                    battle={battle}
-                    currentUserId={currentUser?._id}
-                    key={battle._id}
-                    onView={handleViewBattle}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+            {otherBattles.length > 0 && (
+              <section>
+                <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
+                  Active Battles ({otherBattles.length})
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {otherBattles.map((battle) => (
+                    <BattleThemeCard
+                      battle={battle}
+                      currentUserId={currentUser?._id}
+                      key={battle._id}
+                      onView={handleViewBattle}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {doneBattles.length > 0 && (
-            <section>
-              <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
-                Completed Battles ({doneBattles.length})
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {doneBattles.map((battle) => (
-                  <BattleThemeCard
-                    battle={battle}
-                    currentUserId={currentUser?._id}
-                    key={battle._id}
-                    onView={handleViewBattle}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+            {doneBattles.length > 0 && (
+              <section>
+                <h2 className="mb-4 font-semibold text-2xl text-zinc-50">
+                  Completed Battles ({doneBattles.length})
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {doneBattles.map((battle) => (
+                    <BattleThemeCard
+                      battle={battle}
+                      currentUserId={currentUser?._id}
+                      key={battle._id}
+                      onView={handleViewBattle}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {battles.length === 0 && (
-            <div className="py-16 text-center">
-              <div className="relative inline-block">
-                <div className="mesh-spot -z-10 absolute inset-0" />
-                <p className="font-semibold text-xl text-zinc-400">
-                  No battles yet for this theme
-                </p>
-                <p className="mt-2 text-sm text-zinc-500">
-                  Be the first to create one!
-                </p>
+            {battles.length === 0 && (
+              <div className="py-16 text-center">
+                <div className="relative inline-block">
+                  <div className="mesh-spot -z-10 absolute inset-0" />
+                  <p className="font-semibold text-xl text-zinc-400">
+                    No battles yet for this theme
+                  </p>
+                  <p className="mt-2 text-sm text-zinc-500">
+                    Be the first to create one!
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
       </div>
     </div>
