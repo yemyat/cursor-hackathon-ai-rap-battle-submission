@@ -65,15 +65,15 @@ export function InstructionInput({
   }, [isSubmitting, submitInstructions, battleId, instructions]);
 
   // Hide input if not your turn OR if deadline has passed
-  const deadlinePassed = turnInfo?.currentTurnDeadline 
-    ? Date.now() > turnInfo.currentTurnDeadline 
+  const deadlinePassed = turnInfo?.currentTurnDeadline
+    ? Date.now() > turnInfo.currentTurnDeadline
     : false;
 
   if (!isYourTurn || deadlinePassed) {
     return (
-      <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+      <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl">
         <CardContent className="py-8 text-center">
-          <p className="text-tokyo-comment">
+          <p className="text-lg text-white/70">
             Waiting for opponent's instructions...
           </p>
         </CardContent>
@@ -84,16 +84,18 @@ export function InstructionInput({
   const secondsLeft = Math.ceil(timeLeft / MS_TO_SECONDS);
 
   return (
-    <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+    <Card className="border-brand-coral/50 bg-brand-coral/10 ring-2 ring-brand-coral/30 backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between text-tokyo-fg text-xl">
-          <span>Instruct {agentName}</span>
+        <CardTitle className="flex items-center justify-between text-2xl text-white">
+          <span>
+            Instruct <span className="text-brand-coral">{agentName}</span>
+          </span>
           {isYourTurn && timeLeft > 0 && (
             <span
-              className={`font-mono text-lg ${
+              className={`font-bold font-mono text-xl ${
                 secondsLeft <= URGENT_THRESHOLD_SECONDS
-                  ? "animate-pulse text-tokyo-red"
-                  : "text-tokyo-orange"
+                  ? "animate-pulse text-red-400"
+                  : "text-brand-coralLight"
               }`}
             >
               {secondsLeft}s
@@ -103,7 +105,7 @@ export function InstructionInput({
       </CardHeader>
       <CardContent className="space-y-4">
         <Textarea
-          className="min-h-[120px] border-tokyo-terminal/80 bg-tokyo-bgDark/80 text-tokyo-fg placeholder:text-tokyo-comment focus:border-tokyo-blue focus:ring-tokyo-blue/50"
+          className="min-h-[120px] border-zinc-700 bg-zinc-900/80 text-base text-white placeholder:text-white/50 focus:border-brand-coral focus:ring-brand-coral/50"
           disabled={isSubmitting}
           maxLength={MAX_CHARS}
           onChange={(e) => setInstructions(e.target.value)}
@@ -111,14 +113,13 @@ export function InstructionInput({
           value={instructions}
         />
         <div className="flex items-center justify-between">
-          <span className="text-tokyo-comment text-xs">
+          <span className="text-sm text-white/60">
             {instructions.length}/{MAX_CHARS}
           </span>
           <Button
-            className="border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
+            className="h-11 border-0 bg-brand-coral px-8 font-semibold text-white transition-all hover:bg-brand-coralDark"
             disabled={isSubmitting}
             onClick={handleSubmit}
-            variant="outline"
           >
             {isSubmitting ? "Submitting..." : "Submit"}
           </Button>

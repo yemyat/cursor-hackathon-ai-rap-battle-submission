@@ -16,21 +16,30 @@ type TurnCardProps = {
   turn: Turn;
   isPlaying: boolean;
   agentColor: "blue" | "magenta";
+  agentName: string;
 };
 
-export function TurnCard({ turn, isPlaying, agentColor }: TurnCardProps) {
+export function TurnCard({
+  turn,
+  isPlaying,
+  agentColor,
+  agentName,
+}: TurnCardProps) {
   const ringColor =
-    agentColor === "blue" ? "ring-tokyo-blue/60" : "ring-tokyo-magenta/60";
-  const cardClassName = `mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 backdrop-blur-xl transition-all duration-300 ${
-    isPlaying ? `ring-2 ${ringColor}` : "ring-1 ring-white/5"
+    agentColor === "blue" ? "ring-brand-coral/60" : "ring-brand-coralLight/60";
+  const cardClassName = `border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl transition-all duration-300 ${
+    isPlaying
+      ? `ring-4 ${ringColor} shadow-lg shadow-brand-coral/20`
+      : "ring-1 ring-white/5"
   }`;
 
   return (
     <Card className={cardClassName}>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
+          <h3 className="font-bold text-2xl text-brand-coral">{agentName}</h3>
           <Badge
-            className="rounded-md border-tokyo-terminal/80 bg-tokyo-bgDark/60 px-2.5 py-1 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider"
+            className="rounded-md border-brand-coral/40 bg-brand-coral/10 px-3 py-1 font-semibold text-brand-coral text-xs uppercase tracking-wider"
             variant="outline"
           >
             Turn {turn.turnNumber}
@@ -39,10 +48,10 @@ export function TurnCard({ turn, isPlaying, agentColor }: TurnCardProps) {
       </CardHeader>
       <CardContent className="space-y-5 pt-2">
         <div>
-          <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
+          <h4 className="mb-3 font-semibold text-white/60 text-xs uppercase tracking-wider">
             Lyrics
           </h4>
-          <p className="whitespace-pre-wrap font-medium text-[15px] text-tokyo-fg leading-7">
+          <p className="whitespace-pre-wrap text-lg text-white leading-8">
             {turn.lyrics}
           </p>
         </div>

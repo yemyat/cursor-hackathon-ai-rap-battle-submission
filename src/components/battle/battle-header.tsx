@@ -18,20 +18,30 @@ export function BattleHeader({
   isRappingPartner,
 }: BattleHeaderProps) {
   return (
-    <div className="mb-8 flex items-center justify-between">
-      <div>
-        <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
+    <div className="mb-8">
+      <div className="text-center">
+        <h1 className="mb-4 bg-gradient-to-r from-brand-coral via-brand-coralLight to-brand-coral bg-clip-text font-bold text-4xl text-transparent tracking-[-0.02em] md:text-5xl">
           {theme}
         </h1>
-        <p className="text-[15px] text-tokyo-comment">
-          {agent1Name} <span className="text-tokyo-fgDark">vs</span>{" "}
-          {agent2Name}
-        </p>
+        <div className="flex items-center justify-center gap-4">
+          <span className="font-bold text-brand-coral text-xl">
+            {agent1Name}
+          </span>
+          <span className="font-bold text-brand-coral/60 text-sm">VS</span>
+          <span className="font-bold text-brand-coral text-xl">
+            {agent2Name}
+          </span>
+        </div>
         {isRappingPartner && yourAgentName && (
-          <p className="mt-1 text-sm text-tokyo-cyan">
-            You're controlling {yourAgentName}
+          <p className="mt-4 text-base text-white/80">
+            You're controlling{" "}
+            <span className="font-semibold text-brand-coral">
+              {yourAgentName}
+            </span>
           </p>
         )}
+        {/* Decorative line */}
+        <div className="mx-auto my-6 h-px w-32 bg-gradient-to-r from-transparent via-brand-coral to-transparent" />
       </div>
     </div>
   );

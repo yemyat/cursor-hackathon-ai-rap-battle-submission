@@ -21,84 +21,92 @@ export function WaitingForPartner({
   onJoin,
 }: WaitingForPartnerProps) {
   return (
-    <div className="relative min-h-screen bg-zinc-950 p-6">
-      <div className="mesh-hero -z-10 animate-mesh-pan" />
+    <div className="relative min-h-screen overflow-hidden bg-[#0d0d0d] p-6">
+      {/* Background gradient effects */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 right-0 size-[600px] rounded-full bg-brand-coral opacity-10 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 size-[600px] rounded-full bg-brand-coralLight opacity-10 blur-[120px]" />
+      </div>
 
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-10">
-          <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
+      <div className="relative z-10 mx-auto max-w-2xl">
+        <div className="mb-10 text-center">
+          <h1 className="mb-4 bg-gradient-to-r from-brand-coral via-brand-coralLight to-brand-coral bg-clip-text font-bold text-5xl text-transparent tracking-[-0.02em] md:text-6xl">
             {theme}
           </h1>
-          <p className="text-[15px] text-tokyo-comment">
-            {partner1Side} vs {partner2Side}
-          </p>
+          <div className="flex items-center justify-center gap-4">
+            <span className="font-bold text-2xl text-brand-coral">
+              {partner1Side}
+            </span>
+            <span className="font-bold text-brand-coral/60 text-sm">VS</span>
+            <span className="font-bold text-2xl text-brand-coral">
+              {partner2Side}
+            </span>
+          </div>
+          {/* Decorative line */}
+          <div className="mx-auto my-8 h-px w-32 bg-gradient-to-r from-transparent via-brand-coral to-transparent" />
         </div>
 
-        <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+        <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl">
           <CardContent className="py-16 text-center">
-            <div className="relative inline-block">
-              <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-
-              {canJoin ? (
-                <>
-                  <div className="mb-4 text-4xl">🎤</div>
-                  <p className="mb-2 font-semibold text-tokyo-fg text-xl">
-                    Join the Battle!
-                  </p>
-                  <p className="mb-6 text-sm text-tokyo-comment">
-                    Ready to drop some bars?
-                  </p>
-                  <Button
-                    className="border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta hover:bg-tokyo-magenta/20"
-                    onClick={async () => {
-                      try {
-                        await onJoin();
-                        toast.success("You've joined the battle! Get ready!");
-                      } catch {
-                        toast.error("Failed to join battle. Please try again.");
-                      }
-                    }}
-                    variant="outline"
-                  >
-                    Join as {partner2Side}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="mb-4 text-4xl">⏳</div>
-                  <p className="mb-2 font-semibold text-tokyo-fg text-xl">
-                    Waiting for opponent...
-                  </p>
-                  <p className="mb-2 text-sm text-tokyo-comment">
-                    You're playing as {partner1Side}
-                  </p>
-                  <p className="mb-4 text-sm text-tokyo-comment">
-                    Share this battle link with someone to start!
-                  </p>
-                  <div className="mb-6 flex justify-center">
-                    <div className="rounded-lg bg-white p-4">
-                      <QRCodeSVG size={200} value={window.location.href} />
-                    </div>
+            {canJoin ? (
+              <>
+                <div className="mb-6 text-6xl">🎤</div>
+                <p className="mb-3 font-bold text-3xl text-white">
+                  Join the Battle!
+                </p>
+                <p className="mb-8 text-lg text-white/70">
+                  Ready to drop some bars?
+                </p>
+                <Button
+                  className="h-14 border-0 bg-brand-coral px-12 font-bold text-white text-xl shadow-brand-coral/30 shadow-lg transition-all hover:bg-brand-coralDark hover:shadow-brand-coral/40 hover:shadow-xl"
+                  onClick={async () => {
+                    try {
+                      await onJoin();
+                      toast.success("You've joined the battle! Get ready!");
+                    } catch {
+                      toast.error("Failed to join battle. Please try again.");
+                    }
+                  }}
+                  size="lg"
+                >
+                  Join as {partner2Side}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="mb-6 text-6xl">⏳</div>
+                <p className="mb-3 font-bold text-3xl text-white">
+                  Waiting for opponent...
+                </p>
+                <p className="mb-2 text-lg text-white/70">
+                  You're playing as {partner1Side}
+                </p>
+                <p className="mb-6 text-base text-white/60">
+                  Share this battle link with someone to start!
+                </p>
+                <div className="mb-8 flex justify-center">
+                  <div className="rounded-lg bg-white p-4">
+                    <QRCodeSVG size={200} value={window.location.href} />
                   </div>
-                  <Button
-                    className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
-                    onClick={() => {
-                      navigator.clipboard
-                        .writeText(window.location.href)
-                        .then(() => {
-                          toast.success("Battle link copied to clipboard!");
-                        })
-                        .catch(() => {
-                          toast.error("Failed to copy link");
-                        });
-                    }}
-                    variant="outline"
-                  >
-                    Copy Battle Link
-                  </Button>
-                </>
-              )}
-            </div>
+                </div>
+                <Button
+                  className="h-12 border-2 border-brand-coral/60 bg-brand-coral/10 px-8 font-semibold text-brand-coral transition-all hover:bg-brand-coral/20"
+                  onClick={() => {
+                    navigator.clipboard
+                      .writeText(window.location.href)
+                      .then(() => {
+                        toast.success("Battle link copied to clipboard!");
+                      })
+                      .catch(() => {
+                        toast.error("Failed to copy link");
+                      });
+                  }}
+                  variant="outline"
+                >
+                  Copy Battle Link
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
