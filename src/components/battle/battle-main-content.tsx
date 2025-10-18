@@ -16,6 +16,7 @@ type BattleMainContentProps = {
   yourAgentName?: string;
   currentTurn: Doc<"turns"> | null;
   isReplayMode?: boolean;
+  selectedRound?: number;
 };
 
 export function BattleMainContent({
@@ -30,6 +31,7 @@ export function BattleMainContent({
   yourAgentName,
   currentTurn,
   isReplayMode = false,
+  selectedRound,
 }: BattleMainContentProps) {
   return (
     <div className="mb-10">
@@ -45,15 +47,8 @@ export function BattleMainContent({
       />
 
       {/* Battle Status Indicator */}
-      <div className="mb-6">
-        {isReplayMode ? (
-          <div className="rounded-lg border border-brand-coral/50 bg-brand-coral/10 p-4 text-center backdrop-blur-xl">
-            <p className="font-bold text-brand-coral text-xl">🎬 Replay Mode</p>
-            <p className="mt-2 text-sm text-white/70">
-              Navigate rounds and play tracks freely
-            </p>
-          </div>
-        ) : (
+      {!isReplayMode && (
+        <div className="mb-6">
           <BattleStatus
             agent1Name={battle.agent1Name}
             agent2Name={battle.agent2Name}
@@ -65,8 +60,8 @@ export function BattleMainContent({
             partner1UserId={battle.partner1UserId}
             playbackState={battle.playbackState}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Instruction Input (only visible to rapping partners in active battles) */}
       {!isReplayMode && isRappingPartner && battle.state === "in_progress" && (
@@ -87,6 +82,7 @@ export function BattleMainContent({
         agent2Name={battle.agent2Name}
         agent2Turn={agent2Turn}
         battleId={battle._id}
+        currentRound={selectedRound ?? battle.currentRound}
         isReplayMode={isReplayMode}
         yourAgentName={yourAgentName}
       />

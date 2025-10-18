@@ -149,6 +149,7 @@ function BattleReplayView() {
           isRappingPartner={false}
           isReplayMode={true}
           isYourTurn={false}
+          selectedRound={selectedRound}
           yourAgentName={yourAgentName}
         />
 
@@ -164,11 +165,11 @@ function BattleReplayView() {
           agent1IsPlaying={agent1IsPlaying}
           agent1Name={battle.agent1Name}
           agent1Ref={agent1Ref}
-          agent1Track={agent1Track}
+          agent1Track={agent1Track ?? undefined}
           agent2IsPlaying={agent2IsPlaying}
           agent2Name={battle.agent2Name}
           agent2Ref={agent2Ref}
-          agent2Track={agent2Track}
+          agent2Track={agent2Track ?? undefined}
           currentRound={selectedRound}
           onPlayAgent1={handlePlayAgent1}
           onPlayAgent2={handlePlayAgent2}
