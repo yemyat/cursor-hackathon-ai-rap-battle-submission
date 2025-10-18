@@ -2,6 +2,7 @@ import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";
 import { components, internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
+import { MUSIC_DURATION_MS } from "../constants";
 
 export const workflow = new WorkflowManager(components.workflow);
 
@@ -11,7 +12,7 @@ const PLAYBACK_BUFFER_MS = 500;
 
 /**
  * Main battle workflow that orchestrates the entire rap battle.
- * 
+ *
  * This workflow handles:
  * - Turn timing and timeouts
  * - Agent lyrics generation
@@ -88,13 +89,7 @@ async function executeTurn(
     partnerId: Id<"users">;
   }
 ): Promise<void> {
-  const {
-    battleId,
-    roundNumber,
-    agentName,
-    threadId,
-    partnerId,
-  } = params;
+  const { battleId, roundNumber, agentName, threadId, partnerId } = params;
 
   // 1. Wait for user instructions (with timeout)
   const turnStartTime = Date.now();
@@ -129,13 +124,16 @@ async function executeTurn(
   );
 
   // 3. Generate lyrics using the agent
-  const lyrics = await step.runAction(internal.battleWorkflowHelpers.generateLyrics, {
-    agentName,
-    threadId,
-    instructions: instructions || "",
-    previousLyrics,
-    battleId,
-  });
+  const lyrics = await step.runAction(
+    internal.battleWorkflowHelpers.generateLyrics,
+    {
+      agentName,
+      threadId,
+      instructions: instructions || "",
+      previousLyrics,
+      battleId,
+    }
+  );
 
   // 4. Generate composition plan (this saves it internally)
   const { compositionPlan, compositionPlanId } = await step.runAction(
@@ -157,37 +155,39 @@ async function executeTurn(
   );
 
   // 8. Save turn record
-  const battleData = await step.runQuery(
-    internal.rapBattle.getBattleInternal,
-    { battleId }
-  );
+  const battleData = await step.runQuery(internal.rapBattle.getBattleInternal, {
+    battleId,
+  });
   const turnNumber = agentName === battleData.agent1Name ? 1 : 2;
 
-  const turnId = await step.runMutation(internal.battleWorkflowHelpers.saveTurn, {
-    battleId,
-    roundNumber,
-    turnNumber,
-    agentName,
-    partnerId,
-    instructions: instructions || "",
-    lyrics,
-    musicTrackId: trackId,
-    threadId,
-  });
+  const turnId = await step.runMutation(
+    internal.battleWorkflowHelpers.saveTurn,
+    {
+      battleId,
+      roundNumber,
+      turnNumber,
+      agentName,
+      partnerId,
+      instructions: instructions || "",
+      lyrics,
+      musicTrackId: trackId,
+      threadId,
+    }
+  );
 
   // 6. Start synchronized playback
   const serverTime = Date.now();
-  const duration = (compositionPlan.compositionPlan.sections as Array<{ durationMs: number }>).reduce(
-    (sum: number, section: { durationMs: number }) => sum + section.durationMs,
-    0
-  );
+  const duration = MUSIC_DURATION_MS;
 
-  await step.runMutation(internal.battleWorkflowHelpers.startSynchronizedPlayback, {
-    battleId,
-    turnId,
-    startedAt: serverTime,
-    duration,
-  });
+  await step.runMutation(
+    internal.battleWorkflowHelpers.startSynchronizedPlayback,
+    {
+      battleId,
+      turnId,
+      startedAt: serverTime,
+      duration,
+    }
+  );
 
   // 10. Wait for playback to complete
   await step.runQuery(

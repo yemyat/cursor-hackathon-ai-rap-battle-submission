@@ -2,7 +2,6 @@ import { Agent, stepCountIs } from "@convex-dev/agent";
 import type { LanguageModel } from "ai";
 import { components } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
-import { generateMusicTool } from "./tools/generateMusicTool";
 
 const MAX_STEP_COUNT = 10;
 
@@ -17,18 +16,12 @@ You don't try to squeeze a lot of words but you try to be crystal precise that i
 export function createRapAgent(
   _ctx: ActionCtx,
   agentName: string,
-  model: LanguageModel,
-  includeMusicTool = true
+  model: LanguageModel
 ) {
-  const tools = includeMusicTool
-    ? { generateMusic: generateMusicTool }
-    : {};
-
   return new Agent(components.agent, {
     name: agentName,
     languageModel: model,
     stopWhen: stepCountIs(MAX_STEP_COUNT),
     instructions: systemPrompt,
-    tools,
   });
 }

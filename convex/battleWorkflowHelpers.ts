@@ -111,8 +111,7 @@ export const generateLyrics = internalAction({
     const agent = createRapAgent(
       ctx,
       args.agentName,
-      google("gemini-2.5-flash-lite-preview-09-2025"),
-      false // No music tool
+      google("gemini-2.5-flash-lite-preview-09-2025")
     );
 
     let prompt = `This is a rap battle with the theme: "${battle.theme}"\n\n`;
@@ -124,7 +123,8 @@ export const generateLyrics = internalAction({
     if (args.previousLyrics) {
       prompt += `Your opponent just dropped this:\n\n${args.previousLyrics}\n\nNow it's your turn. Write hard-hitting lyrics that respond and destroy them. ONLY output the lyrics, nothing else.`;
     } else {
-      prompt += "You're going first. Write opening lyrics that set the tone. ONLY output the lyrics, nothing else.";
+      prompt +=
+        "You're going first. Write opening lyrics that set the tone. ONLY output the lyrics, nothing else.";
     }
 
     const { messageId } = await saveMessage(ctx, components.agent, {

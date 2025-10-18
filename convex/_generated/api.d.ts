@@ -10,11 +10,11 @@
 
 import type * as agents_rapAgent from "../agents/rapAgent.js";
 import type * as agents_tools_generateMusic from "../agents/tools/generateMusic.js";
-import type * as agents_tools_generateMusicTool from "../agents/tools/generateMusicTool.js";
 import type * as agents_tools_saveCompositionPlan from "../agents/tools/saveCompositionPlan.js";
 import type * as agents_tools_saveMusicTrack from "../agents/tools/saveMusicTrack.js";
 import type * as battleWorkflowHelpers from "../battleWorkflowHelpers.js";
 import type * as cheers from "../cheers.js";
+import type * as constants from "../constants.js";
 import type * as http from "../http.js";
 import type * as rapBattle from "../rapBattle.js";
 import type * as startBattleWorkflow from "../startBattleWorkflow.js";
@@ -39,11 +39,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   "agents/rapAgent": typeof agents_rapAgent;
   "agents/tools/generateMusic": typeof agents_tools_generateMusic;
-  "agents/tools/generateMusicTool": typeof agents_tools_generateMusicTool;
   "agents/tools/saveCompositionPlan": typeof agents_tools_saveCompositionPlan;
   "agents/tools/saveMusicTrack": typeof agents_tools_saveMusicTrack;
   battleWorkflowHelpers: typeof battleWorkflowHelpers;
   cheers: typeof cheers;
+  constants: typeof constants;
   http: typeof http;
   rapBattle: typeof rapBattle;
   startBattleWorkflow: typeof startBattleWorkflow;
