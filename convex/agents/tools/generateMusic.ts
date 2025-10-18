@@ -7,11 +7,14 @@ import type { Id } from "../../_generated/dataModel";
 import { internalAction } from "../../_generated/server";
 
 const MUSIC_DURATION_MS = 30_000;
+const MAX_ROUNDS = 6;
 
 export const generateMusic = internalAction({
   args: {
     lyrics: v.string(),
     agentName: v.string(),
+    battleId: v.optional(v.id("rapBattles")),
+    threadId: v.optional(v.string()),
   },
   returns: v.object({
     storageUrl: v.string(),
@@ -97,6 +100,51 @@ export const generateMusic = internalAction({
     const storageUrl = await ctx.storage.getUrl(storageId);
     if (!storageUrl) {
       throw new Error("Failed to get storage URL for uploaded music");
+    }
+
+    // If this is part of a rap battle, handle battle orchestration
+    if (args.battleId && args.threadId) {
+      const battle = await ctx.runQuery(internal.rapBattle.getBattle, {
+        battleId: args.battleId,
+      });
+
+      if (!battle) {
+        throw new Error("Battle not found");
+      }
+
+      // Save this round
+      await ctx.runMutation(internal.rapBattle.saveRound, {
+        rapBattleId: args.battleId,
+        roundNumber: battle.currentRound,
+        agentName: args.agentName,
+        lyrics: args.lyrics,
+        musicTrackId: trackId,
+        threadId: args.threadId,
+      });
+
+      // Increment the round
+      await ctx.runMutation(internal.rapBattle.incrementBattleRound, {
+        battleId: args.battleId,
+      });
+
+      // If we haven't reached 6 rounds yet, invoke the next agent
+      if (battle.currentRound < MAX_ROUNDS) {
+        // Determine which agent goes next
+        const isAgent1 = args.agentName === battle.agent1Name;
+        const nextAgentName = isAgent1 ? battle.agent2Name : battle.agent1Name;
+        const nextThreadId = isAgent1
+          ? battle.agent2ThreadId
+          : battle.agent1ThreadId;
+
+        // Schedule the next round
+        await ctx.scheduler.runAfter(0, internal.rapBattle.executeRound, {
+          battleId: args.battleId,
+          agentName: nextAgentName,
+          threadId: nextThreadId,
+          roundNumber: battle.currentRound + 1,
+          previousLyrics: args.lyrics,
+        });
+      }
     }
 
     return { storageUrl, trackId };

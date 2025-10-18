@@ -20,11 +20,28 @@ export const generateMusicTool = createTool({
     // Get agent name, fallback to "Unknown Agent" if not available
     const agentName = ctx.agent?.options?.name ?? "Unknown Agent";
 
+    // Get battle context from thread metadata if available
+    const threadId = ctx.threadId;
+    let battleId: Id<"rapBattles"> | undefined;
+
+    if (threadId) {
+      // Try to find an active battle for this thread
+      const battle = await ctx.runQuery(
+        internal.rapBattle.getBattleByThreadId,
+        {
+          threadId,
+        }
+      );
+      battleId = battle?._id;
+    }
+
     // Delegate to internal action
     const result: { storageUrl: string; trackId: Id<"musicTracks"> } =
       await ctx.runAction(internal.agents.tools.generateMusic.generateMusic, {
         lyrics: args.lyrics,
         agentName,
+        battleId,
+        threadId,
       });
 
     return result;

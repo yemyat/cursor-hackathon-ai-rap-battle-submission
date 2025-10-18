@@ -37,6 +37,32 @@ export default defineSchema(
       storageId: v.id("_storage"),
       createdAt: v.number(),
     }),
+    // Rap battles orchestration
+    rapBattles: defineTable({
+      theme: v.string(),
+      state: v.union(
+        v.literal("preparing"),
+        v.literal("in_progress"),
+        v.literal("done")
+      ),
+      currentRound: v.number(),
+      agent1Name: v.string(),
+      agent2Name: v.string(),
+      agent1ThreadId: v.string(),
+      agent2ThreadId: v.string(),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    // Individual rounds in a rap battle
+    rounds: defineTable({
+      rapBattleId: v.id("rapBattles"),
+      roundNumber: v.number(),
+      agentName: v.string(),
+      lyrics: v.string(),
+      musicTrackId: v.id("musicTracks"),
+      threadId: v.string(),
+      createdAt: v.number(),
+    }).index("by_battle", ["rapBattleId"]),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot
