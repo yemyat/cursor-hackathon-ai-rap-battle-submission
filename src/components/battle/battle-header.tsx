@@ -11,9 +11,6 @@ type BattleHeaderProps = {
 
 export function BattleHeader({
   theme,
-  agent1Name,
-  agent2Name,
-
   yourAgentName,
   isRappingPartner,
 }: BattleHeaderProps) {
