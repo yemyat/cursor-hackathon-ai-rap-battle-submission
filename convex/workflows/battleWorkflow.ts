@@ -2,11 +2,10 @@ import { WorkflowManager } from "@convex-dev/workflow";
 import { v } from "convex/values";
 import { components, internal } from "../_generated/api";
 import type { Id } from "../_generated/dataModel";
-import { MUSIC_DURATION_MS } from "../constants";
+import { MUSIC_DURATION_MS, TURN_DURATION_MS } from "../constants";
 
 export const workflow = new WorkflowManager(components.workflow);
 
-const TURN_DURATION_MS = 10_000; // 10 seconds for instructions
 const MAX_ROUNDS = 3;
 const PLAYBACK_BUFFER_MS = 500;
 
