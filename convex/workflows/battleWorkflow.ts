@@ -31,7 +31,7 @@ export const battleWorkflow = workflow.define({
   },
   handler: async (step, args): Promise<void> => {
     console.log("🎤 Starting battle workflow", { battleId: args.battleId });
-    
+
     // Get battle details
     const battle = await step.runQuery(internal.rapBattle.getBattleInternal, {
       battleId: args.battleId,
@@ -41,27 +41,45 @@ export const battleWorkflow = workflow.define({
       throw new Error("Battle not found");
     }
 
-    console.log("✅ Battle loaded", { agent1: battle.agent1Name, agent2: battle.agent2Name });
+    console.log("✅ Battle loaded", {
+      agent1: battle.agent1Name,
+      agent2: battle.agent2Name,
+    });
+
+    // Determine which partner controls which agent
+    const partner1ControlsAgent1 = battle.partner1Side === battle.agent1Name;
+
+    console.log("🎮 Partner assignments:", {
+      partner1Side: battle.partner1Side,
+      partner2Side: battle.partner2Side,
+      agent1Name: battle.agent1Name,
+      agent2Name: battle.agent2Name,
+      partner1ControlsAgent1,
+    });
 
     // Run 3 rounds
     for (let round = 1; round <= MAX_ROUNDS; round++) {
       console.log(`🔄 Starting round ${round}/${MAX_ROUNDS}`);
-      // Agent 1's turn
+      // Agent 1's turn (use correct partner and thread)
       await executeTurn(step, {
         battleId: args.battleId,
         roundNumber: round,
         agentName: battle.agent1Name,
         threadId: args.agent1ThreadId,
-        partnerId: args.partner1UserId,
+        partnerId: partner1ControlsAgent1
+          ? args.partner1UserId
+          : args.partner2UserId,
       });
 
-      // Agent 2's turn
+      // Agent 2's turn (use correct partner and thread)
       await executeTurn(step, {
         battleId: args.battleId,
         roundNumber: round,
         agentName: battle.agent2Name,
         threadId: args.agent2ThreadId,
-        partnerId: args.partner2UserId,
+        partnerId: partner1ControlsAgent1
+          ? args.partner2UserId
+          : args.partner1UserId,
       });
 
       // Increment round after both turns complete
@@ -125,7 +143,9 @@ async function executeTurn(
     { runAfter: TURN_DURATION_MS }
   );
 
-  console.log(`📝 Instructions received: ${instructions ? `"${instructions}"` : "timeout"}`);
+  console.log(
+    `📝 Instructions received: ${instructions ? `"${instructions}"` : "timeout"}`
+  );
 
   // Clear the turn state immediately after instructions received/timeout
   await step.runMutation(internal.battleWorkflowHelpers.clearCurrentTurn, {
