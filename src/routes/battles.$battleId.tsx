@@ -155,7 +155,7 @@ function BattleView() {
     <div className="relative min-h-screen bg-zinc-950 p-6 pb-32">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
-      <div className="mx-auto mb-10 max-w-7xl">
+      <div className="mb-10">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
@@ -211,7 +211,7 @@ function BattleView() {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6">
         <div className="space-y-5">
           <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
             <CardHeader className="pb-4">

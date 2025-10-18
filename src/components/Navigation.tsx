@@ -13,7 +13,7 @@ export function Navigation() {
 
   return (
     <nav className="fixed top-0 right-0 left-0 z-50 border-white/5 border-b bg-zinc-950/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="px-6">
         <div className="flex h-20 items-center justify-between">
           <Link
             className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105"
