@@ -1,8 +1,5 @@
-import { useQuery } from "convex/react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 export type Turn = {
@@ -17,15 +14,19 @@ export type Turn = {
 
 type TurnCardProps = {
   turn: Turn;
+  isPlaying: boolean;
+  agentColor: "blue" | "magenta";
 };
 
-export function TurnCard({ turn }: TurnCardProps) {
-  const musicTrack = useQuery(api.rapBattle.getMusicTrack, {
-    trackId: turn.musicTrackId,
-  });
+export function TurnCard({ turn, isPlaying, agentColor }: TurnCardProps) {
+  const ringColor =
+    agentColor === "blue" ? "ring-tokyo-blue/60" : "ring-tokyo-magenta/60";
+  const cardClassName = `mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 backdrop-blur-xl transition-all duration-300 ${
+    isPlaying ? `ring-2 ${ringColor}` : "ring-1 ring-white/5"
+  }`;
 
   return (
-    <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-white/5 backdrop-blur-xl">
+    <Card className={cardClassName}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <Badge
@@ -45,25 +46,6 @@ export function TurnCard({ turn }: TurnCardProps) {
             {turn.lyrics}
           </p>
         </div>
-
-        {musicTrack && (
-          <>
-            <Separator className="bg-tokyo-terminal/60" />
-            <div>
-              <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
-                Audio
-              </h4>
-              <audio
-                className="w-full rounded-lg ring-1 ring-tokyo-terminal/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tokyo-blue/50"
-                controls
-                src={musicTrack.storageUrl ?? undefined}
-              >
-                <track kind="captions" />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </>
-        )}
       </CardContent>
     </Card>
   );
