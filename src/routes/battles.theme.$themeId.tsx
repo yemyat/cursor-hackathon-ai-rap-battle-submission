@@ -23,6 +23,8 @@ function ThemeBattlesPage() {
     themeId: themeId as Id<"themes">,
   });
 
+  const currentUser = useQuery(api.users.getCurrentUser);
+
   const createBattle = useMutation(api.rapBattle.createBattle);
   const joinBattle = useMutation(api.rapBattle.joinBattle);
 
@@ -136,13 +138,23 @@ function ThemeBattlesPage() {
                       <p className="text-sm text-zinc-500">
                         Round {battle.currentRound}
                       </p>
-                      <Button
-                        className="w-full border-brand-purple/60 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20"
-                        onClick={() => handleJoinBattle(battle._id)}
-                        variant="outline"
-                      >
-                        Join Battle
-                      </Button>
+                      {battle.partner1UserId === currentUser?._id ? (
+                        <Button
+                          className="w-full border-zinc-700/60 bg-zinc-800/40 text-zinc-400"
+                          disabled
+                          variant="outline"
+                        >
+                          Your Battle
+                        </Button>
+                      ) : (
+                        <Button
+                          className="w-full border-brand-purple/60 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20"
+                          onClick={() => handleJoinBattle(battle._id)}
+                          variant="outline"
+                        >
+                          Join Battle
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
