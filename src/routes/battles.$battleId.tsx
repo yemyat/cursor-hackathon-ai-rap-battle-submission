@@ -27,6 +27,7 @@ function BattleView() {
   const [selectedRound, setSelectedRound] = useState(1);
   const [currentlyPlayingTurn, setCurrentlyPlayingTurn] =
     useState<Id<"turns"> | null>(null);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Get turns for the selected round
@@ -57,8 +58,16 @@ function BattleView() {
   // Audio event handlers
   const handleAudioEnded = () => {
     if (currentlyPlayingTurn === agent1Turn?._id && agent2Turn) {
+      // Agent1 finished, play agent2
       setCurrentlyPlayingTurn(agent2Turn._id);
+    } else if (
+      currentlyPlayingTurn === agent2Turn?._id &&
+      selectedRound < maxRound
+    ) {
+      // Agent2 finished, advance to next round
+      setSelectedRound(selectedRound + 1);
     } else {
+      // No more to play
       setCurrentlyPlayingTurn(null);
     }
   };
@@ -97,6 +106,18 @@ function BattleView() {
   useEffect(() => {
     setCurrentlyPlayingTurn(null);
   }, [selectedRound]);
+
+  // Autoplay agent1 when round is ready (only after user has interacted)
+  useEffect(() => {
+    if (
+      hasUserInteracted &&
+      agent1Turn &&
+      agent1Track &&
+      !currentlyPlayingTurn
+    ) {
+      setCurrentlyPlayingTurn(agent1Turn._id);
+    }
+  }, [hasUserInteracted, agent1Turn, agent1Track, currentlyPlayingTurn]);
 
   if (!battle) {
     return (
@@ -266,11 +287,13 @@ function BattleView() {
         onAudioPlay={handleAudioPlay}
         onPlayAgent1={() => {
           if (agent1Turn) {
+            setHasUserInteracted(true);
             setCurrentlyPlayingTurn(agent1Turn._id);
           }
         }}
         onPlayAgent2={() => {
           if (agent2Turn) {
+            setHasUserInteracted(true);
             setCurrentlyPlayingTurn(agent2Turn._id);
           }
         }}
