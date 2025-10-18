@@ -131,16 +131,23 @@ async function executeTurn(
 
   console.log(`⏱️  Waiting for instructions (${TURN_DURATION_MS}ms)...`);
 
-  // Wait for instructions or timeout
-  const instructions = await step.runQuery(
-    internal.battleWorkflowHelpers.waitForInstructions,
-    {
-      battleId,
-      partnerId,
-      deadline,
-    },
-    { runAfter: TURN_DURATION_MS }
-  );
+  // Poll for instructions every 500ms until submitted or timeout
+  const POLL_INTERVAL_MS = 500;
+  let instructions: string | null = null;
+  let elapsed = 0;
+  
+  while (elapsed < TURN_DURATION_MS && instructions === null) {
+    instructions = await step.runQuery(
+      internal.battleWorkflowHelpers.waitForInstructions,
+      {
+        battleId,
+        partnerId,
+        deadline,
+      },
+      { runAfter: POLL_INTERVAL_MS }
+    );
+    elapsed += POLL_INTERVAL_MS;
+  }
 
   console.log(
     `📝 Instructions received: ${instructions ? `"${instructions}"` : "timeout"}`

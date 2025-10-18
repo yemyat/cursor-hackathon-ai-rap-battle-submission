@@ -23,17 +23,9 @@ export function BattleHeader({
         <h1 className="mb-4 bg-gradient-to-r from-brand-coral via-brand-coralLight to-brand-coral bg-clip-text font-bold text-4xl text-transparent tracking-[-0.02em] md:text-5xl">
           {theme}
         </h1>
-        <div className="flex items-center justify-center gap-4">
-          <span className="font-bold text-brand-coral text-xl">
-            {agent1Name}
-          </span>
-          <span className="font-bold text-brand-coral/60 text-sm">VS</span>
-          <span className="font-bold text-brand-coral text-xl">
-            {agent2Name}
-          </span>
-        </div>
+
         {isRappingPartner && yourAgentName && (
-          <p className="mt-4 text-base text-white/80">
+          <p className="text- white/80 mt-4 text-xl">
             You're controlling{" "}
             <span className="font-semibold text-brand-coral">
               {yourAgentName}
