@@ -33,11 +33,33 @@ export const generateMusic = internalAction({
 
     // Step 1: Create composition plan
     const compositionPlan = await elevenlabs.music.compositionPlan.create({
-      prompt: `${args.prompt}. Include styles: hiphop, battle rap, aggressive, energetic, lyrical. Exclude styles: melodic choruses, pop, slow, acoustic.`,
+      prompt: args.prompt,
       musicLengthMs: MUSIC_DURATION_MS,
+      sourceCompositionPlan: {
+        positiveGlobalStyles: [
+          "hiphop",
+          "battle rap",
+          "aggressive",
+          "energetic",
+          "lyrical",
+        ],
+        negativeGlobalStyles: ["melodic choruses", "pop", "slow", "acoustic"],
+        sections: [],
+      },
     });
 
-    // Step 2: Generate music using the composition plan
+    // Step 2: Save composition plan immediately to database
+    const compositionPlanId: Id<"compositionPlans"> = await ctx.runMutation(
+      internal.agents.tools.saveCompositionPlan.saveCompositionPlan,
+      {
+        agentName: args.agentName,
+        prompt: args.prompt,
+        compositionPlan,
+        durationMs: MUSIC_DURATION_MS,
+      }
+    );
+
+    // Step 3: Generate music using the composition plan
     const track = await elevenlabs.music.compose({
       compositionPlan,
     });
@@ -59,15 +81,13 @@ export const generateMusic = internalAction({
     // Upload to Convex storage
     const storageId = await ctx.storage.store(audioBlob);
 
-    // Save metadata to database
+    // Step 4: Save music track metadata to database
     const trackId: Id<"musicTracks"> = await ctx.runMutation(
       internal.agents.tools.saveMusicTrack.saveMusicTrack,
       {
         agentName: args.agentName,
-        prompt: args.prompt,
-        compositionPlan,
+        compositionPlanId,
         storageId,
-        durationMs: MUSIC_DURATION_MS,
       }
     );
 

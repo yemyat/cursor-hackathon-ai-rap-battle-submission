@@ -1,22 +1,19 @@
 import { v } from "convex/values";
+import type { Id } from "../../_generated/dataModel";
 import { internalMutation } from "../../_generated/server";
 
 export const saveMusicTrack = internalMutation({
   args: {
     agentName: v.string(),
-    prompt: v.string(),
-    compositionPlan: v.any(),
+    compositionPlanId: v.id("compositionPlans"),
     storageId: v.id("_storage"),
-    durationMs: v.number(),
   },
   returns: v.id("musicTracks"),
   handler: async (ctx, args) => {
-    const trackId = await ctx.db.insert("musicTracks", {
+    const trackId: Id<"musicTracks"> = await ctx.db.insert("musicTracks", {
       agentName: args.agentName,
-      prompt: args.prompt,
-      compositionPlan: args.compositionPlan,
+      compositionPlanId: args.compositionPlanId,
       storageId: args.storageId,
-      durationMs: args.durationMs,
       createdAt: Date.now(),
     });
 

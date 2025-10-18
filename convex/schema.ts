@@ -7,23 +7,34 @@ import { v } from "convex/values";
 
 export default defineSchema(
   {
-    documents: defineTable({
-      fieldOne: v.string(),
-      fieldTwo: v.object({
-        subFieldOne: v.array(v.number()),
+    // Composition plans generated before music composition
+    compositionPlans: defineTable({
+      agentName: v.string(),
+      prompt: v.string(),
+      // Raw composition plan from ElevenLabs
+      compositionPlan: v.object({
+        positiveGlobalStyles: v.array(v.string()),
+        negativeGlobalStyles: v.array(v.string()),
+        sections: v.array(
+          v.object({
+            sectionName: v.string(),
+            durationMs: v.number(),
+            lines: v.array(v.string()),
+            positiveLocalStyles: v.array(v.string()),
+            negativeLocalStyles: v.array(v.string()),
+          })
+        ),
       }),
-    }),
-    // This definition matches the example query and mutation code:
-    numbers: defineTable({
-      value: v.number(),
+      // Extracted lyrics from all sections
+      lyrics: v.string(),
+      durationMs: v.number(),
+      createdAt: v.number(),
     }),
     // Tracks generated music for rap battle agents
     musicTracks: defineTable({
       agentName: v.string(),
-      prompt: v.string(),
-      compositionPlan: v.any(),
+      compositionPlanId: v.id("compositionPlans"),
       storageId: v.id("_storage"),
-      durationMs: v.number(),
       createdAt: v.number(),
     }),
   },

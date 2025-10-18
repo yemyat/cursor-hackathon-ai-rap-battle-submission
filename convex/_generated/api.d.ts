@@ -11,6 +11,7 @@
 import type * as agents_rapAgent from "../agents/rapAgent.js";
 import type * as agents_tools_generateMusic from "../agents/tools/generateMusic.js";
 import type * as agents_tools_generateMusicTool from "../agents/tools/generateMusicTool.js";
+import type * as agents_tools_saveCompositionPlan from "../agents/tools/saveCompositionPlan.js";
 import type * as agents_tools_saveMusicTrack from "../agents/tools/saveMusicTrack.js";
 import type * as rapBattle from "../rapBattle.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   "agents/rapAgent": typeof agents_rapAgent;
   "agents/tools/generateMusic": typeof agents_tools_generateMusic;
   "agents/tools/generateMusicTool": typeof agents_tools_generateMusicTool;
+  "agents/tools/saveCompositionPlan": typeof agents_tools_saveCompositionPlan;
   "agents/tools/saveMusicTrack": typeof agents_tools_saveMusicTrack;
   rapBattle: typeof rapBattle;
 }>;
