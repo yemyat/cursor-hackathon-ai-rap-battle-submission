@@ -12,7 +12,9 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
-import { Route as BattleBattleIdImport } from './routes/battle.$battleId'
+import { Route as BattlesIndexImport } from './routes/battles.index'
+import { Route as BattlesCreateImport } from './routes/battles.create'
+import { Route as BattlesBattleIdImport } from './routes/battles.$battleId'
 
 // Create/Update Routes
 
@@ -21,8 +23,18 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const BattleBattleIdRoute = BattleBattleIdImport.update({
-  path: '/battle/$battleId',
+const BattlesIndexRoute = BattlesIndexImport.update({
+  path: '/battles/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const BattlesCreateRoute = BattlesCreateImport.update({
+  path: '/battles/create',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const BattlesBattleIdRoute = BattlesBattleIdImport.update({
+  path: '/battles/$battleId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -37,11 +49,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/battle/$battleId': {
-      id: '/battle/$battleId'
-      path: '/battle/$battleId'
-      fullPath: '/battle/$battleId'
-      preLoaderRoute: typeof BattleBattleIdImport
+    '/battles/': {
+      id: '/battles/'
+      path: '/battles'
+      fullPath: '/battles'
+      preLoaderRoute: typeof BattlesIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/battles/create': {
+      id: '/battles/create'
+      path: '/battles/create'
+      fullPath: '/battles/create'
+      preLoaderRoute: typeof BattlesCreateImport
+      parentRoute: typeof rootRoute
+    }
+    '/battles/$battleId': {
+      id: '/battles/$battleId'
+      path: '/battles/$battleId'
+      fullPath: '/battles/$battleId'
+      preLoaderRoute: typeof BattlesBattleIdImport
       parentRoute: typeof rootRoute
     }
   }
@@ -51,7 +77,9 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren({
   IndexRoute,
-  BattleBattleIdRoute,
+  BattlesIndexRoute,
+  BattlesCreateRoute,
+  BattlesBattleIdRoute,
 })
 
 /* prettier-ignore-end */

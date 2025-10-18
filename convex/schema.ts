@@ -53,10 +53,11 @@ export default defineSchema(
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
-    // Individual rounds in a rap battle
-    rounds: defineTable({
+    // Individual turns in a rap battle
+    turns: defineTable({
       rapBattleId: v.id("rapBattles"),
       roundNumber: v.number(),
+      turnNumber: v.number(), // 1 or 2
       agentName: v.string(),
       lyrics: v.string(),
       musicTrackId: v.id("musicTracks"),

@@ -209,7 +209,7 @@ export const updateBattleState = internalMutation({
   },
 });
 
-const MAX_ROUNDS = 6;
+const MAX_ROUNDS = 3; // 3 rounds, each with 2 turns
 
 export const incrementBattleRound = internalMutation({
   args: {
@@ -221,35 +221,51 @@ export const incrementBattleRound = internalMutation({
       throw new Error("Battle not found");
     }
 
-    const newRound = battle.currentRound + 1;
-    await ctx.db.patch(args.battleId, {
-      currentRound: newRound,
-      updatedAt: Date.now(),
-    });
+    // Get all turns for this battle
+    const turns = await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
 
-    // Mark as done if we've completed 6 rounds
-    if (newRound > MAX_ROUNDS) {
+    // Count turns in current round
+    const currentRoundTurns = turns.filter(
+      (t) => t.roundNumber === battle.currentRound
+    );
+
+    // If we have 2 turns in current round, move to next round
+    if (currentRoundTurns.length >= 2) {
+      const newRound = battle.currentRound + 1;
       await ctx.db.patch(args.battleId, {
-        state: "done",
+        currentRound: newRound,
         updatedAt: Date.now(),
       });
+
+      // Mark as done if we've completed all rounds
+      if (newRound > MAX_ROUNDS) {
+        await ctx.db.patch(args.battleId, {
+          state: "done",
+          updatedAt: Date.now(),
+        });
+      }
     }
   },
 });
 
-export const saveRound = internalMutation({
+export const saveTurn = internalMutation({
   args: {
     rapBattleId: v.id("rapBattles"),
     roundNumber: v.number(),
+    turnNumber: v.number(),
     agentName: v.string(),
     lyrics: v.string(),
     musicTrackId: v.id("musicTracks"),
     threadId: v.string(),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("rounds", {
+    await ctx.db.insert("turns", {
       rapBattleId: args.rapBattleId,
       roundNumber: args.roundNumber,
+      turnNumber: args.turnNumber,
       agentName: args.agentName,
       lyrics: args.lyrics,
       musicTrackId: args.musicTrackId,
@@ -288,15 +304,34 @@ export const getBattleByThreadId = internalQuery({
   },
 });
 
-export const getRoundsByBattle = query({
+export const getTurnsByBattle = query({
   args: {
     battleId: v.id("rapBattles"),
   },
   handler: async (ctx, args) =>
     await ctx.db
-      .query("rounds")
+      .query("turns")
       .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
       .collect(),
+});
+
+export const getTurnsInternal = internalQuery({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  handler: async (ctx, args) =>
+    await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect(),
+});
+
+export const listBattles = query({
+  args: {},
+  handler: async (ctx) => {
+    const battles = await ctx.db.query("rapBattles").order("desc").collect();
+    return battles;
+  },
 });
 
 export const getMusicTrack = query({
