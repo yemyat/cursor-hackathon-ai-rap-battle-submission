@@ -123,6 +123,7 @@ export const createBattle = mutation({
     // Randomly assign creator to side1 or side2
     const isCreatorSide1 = Math.random() < POINT_FIVE;
     const partner1Side = isCreatorSide1 ? theme.side1Name : theme.side2Name;
+    const partner2Side = isCreatorSide1 ? theme.side2Name : theme.side1Name;
 
     const now = Date.now();
 
@@ -136,6 +137,7 @@ export const createBattle = mutation({
       agent2Name: theme.side2Name,
       partner1UserId: user._id,
       partner1Side,
+      partner2Side,
       waitingForPartner: true,
       createdAt: now,
       updatedAt: now,
@@ -182,11 +184,9 @@ export const joinBattle = mutation({
       throw new Error("Cannot join your own battle");
     }
 
-    // Assign joiner to opposite side
-    const partner2Side =
-      battle.partner1Side === battle.agent1Name
-        ? battle.agent2Name
-        : battle.agent1Name;
+    if (!battle.partner2Side) {
+      throw new Error("Battle is not properly configured");
+    }
 
     // Create threads for both agents
     const agent1ThreadId = await createThread(ctx, components.agent, {
@@ -206,7 +206,6 @@ export const joinBattle = mutation({
     // Update battle
     await ctx.db.patch(args.battleId, {
       partner2UserId: user._id,
-      partner2Side,
       agent1ThreadId,
       agent2ThreadId,
       waitingForPartner: false,

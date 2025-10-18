@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -38,6 +38,8 @@ function BattleView() {
     useState<Id<"turns"> | null>(null);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const joinBattle = useMutation(api.rapBattle.joinBattle);
 
   // Get turns for the selected round
   const roundTurns =
@@ -154,6 +156,9 @@ function BattleView() {
 
   // Waiting for partner state
   if (battle.state === "waiting_for_partner") {
+    // Check if current user can join
+    const canJoin = currentUser && !isPartner1 && !isPartner2;
+
     return (
       <div className="relative min-h-screen bg-zinc-950 p-6">
         <div className="mesh-hero -z-10 animate-mesh-pan" />
@@ -164,7 +169,7 @@ function BattleView() {
               {battle.theme}
             </h1>
             <p className="text-[15px] text-tokyo-comment">
-              You're playing as {isPartner1 ? battle.partner1Side : "..."}
+              {battle.partner1Side} vs {battle.partner2Side}
             </p>
           </div>
 
@@ -172,29 +177,69 @@ function BattleView() {
             <CardContent className="py-16 text-center">
               <div className="relative inline-block">
                 <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-                <div className="mb-4 text-4xl">⏳</div>
-                <p className="mb-2 font-semibold text-tokyo-fg text-xl">
-                  Waiting for opponent...
-                </p>
-                <p className="text-sm text-tokyo-comment">
-                  Share this battle link with someone to start!
-                </p>
-                <Button
-                  className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href).then(
-                      () => {
-                        toast.success("Battle link copied to clipboard!");
-                      },
-                      () => {
-                        toast.error("Failed to copy link. Please try manually.");
-                      }
-                    );
-                  }}
-                  variant="outline"
-                >
-                  Copy Battle Link
-                </Button>
+
+                {canJoin ? (
+                  <>
+                    <div className="mb-4 text-4xl">🎤</div>
+                    <p className="mb-2 font-semibold text-tokyo-fg text-xl">
+                      Join the Battle!
+                    </p>
+                    <p className="mb-6 text-sm text-tokyo-comment">
+                      Ready to drop some bars?
+                    </p>
+                    <Button
+                      className="border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta hover:bg-tokyo-magenta/20"
+                      onClick={async () => {
+                        try {
+                          await joinBattle({
+                            battleId: battle._id as Id<"rapBattles">,
+                          });
+                          toast.success("You've joined the battle! Get ready!");
+                        } catch {
+                          toast.error(
+                            "Failed to join battle. Please try again."
+                          );
+                        }
+                      }}
+                      variant="outline"
+                    >
+                      Join as {battle.partner2Side}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-4 text-4xl">⏳</div>
+                    <p className="mb-2 font-semibold text-tokyo-fg text-xl">
+                      Waiting for opponent...
+                    </p>
+                    <p className="mb-2 text-sm text-tokyo-comment">
+                      You're playing as {battle.partner1Side}
+                    </p>
+                    <p className="text-sm text-tokyo-comment">
+                      Share this battle link with someone to start!
+                    </p>
+                    <Button
+                      className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
+                      onClick={() => {
+                        navigator.clipboard
+                          .writeText(window.location.href)
+                          .then(
+                            () => {
+                              toast.success("Battle link copied to clipboard!");
+                            },
+                            () => {
+                              toast.error(
+                                "Failed to copy link. Please try manually."
+                              );
+                            }
+                          );
+                      }}
+                      variant="outline"
+                    >
+                      Copy Battle Link
+                    </Button>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
