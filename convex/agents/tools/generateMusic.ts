@@ -8,22 +8,21 @@ import { internalAction } from "../../_generated/server";
 
 const MUSIC_DURATION_MS = 30_000;
 
-export const generateMusic = internalAction({
+/**
+ * Creates a composition plan using ElevenLabs API and saves it to the database.
+ * Returns the composition plan object and its database ID.
+ */
+export const generateCompositionPlan = internalAction({
   args: {
     lyrics: v.string(),
     agentName: v.string(),
-    battleId: v.optional(v.id("rapBattles")),
-    threadId: v.optional(v.string()),
   },
   returns: v.object({
-    storageUrl: v.string(),
-    trackId: v.id("musicTracks"),
+    compositionPlan: v.any(),
+    compositionPlanId: v.id("compositionPlans"),
+    prompt: v.string(),
   }),
-  handler: async (
-    ctx,
-    args
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: <ignore>
-  ): Promise<{ storageUrl: string; trackId: Id<"musicTracks"> }> => {
+  handler: async (ctx, args) => {
     const apiKey = process.env.ELEVENLABS_API_KEY;
     if (!apiKey) {
       throw new Error(
@@ -31,12 +30,10 @@ export const generateMusic = internalAction({
       );
     }
 
-    // Initialize ElevenLabs client
     const elevenlabs = new ElevenLabsClient({ apiKey });
-
     const prompt = `Rap battle with these lyrics: ${args.lyrics}`;
 
-    // Step 1: Create composition plan
+    // Create composition plan with ElevenLabs
     const compositionPlan = await elevenlabs.music.compositionPlan.create({
       prompt,
       musicLengthMs: MUSIC_DURATION_MS,
@@ -53,7 +50,7 @@ export const generateMusic = internalAction({
       },
     });
 
-    // Step 2: Save composition plan immediately to database
+    // Save composition plan to database
     const compositionPlanId: Id<"compositionPlans"> = await ctx.runMutation(
       internal.agents.tools.saveCompositionPlan.saveCompositionPlan,
       {
@@ -64,13 +61,40 @@ export const generateMusic = internalAction({
       }
     );
 
-    // Step 3: Generate music using the composition plan
+    return { compositionPlan, compositionPlanId, prompt };
+  },
+});
+
+/**
+ * Composes music from a composition plan using ElevenLabs API.
+ * Converts the audio stream to a blob, stores it, and saves track metadata.
+ */
+export const composeMusicFromPlan = internalAction({
+  args: {
+    compositionPlan: v.any(),
+    compositionPlanId: v.id("compositionPlans"),
+    agentName: v.string(),
+  },
+  returns: v.object({
+    storageUrl: v.string(),
+    trackId: v.id("musicTracks"),
+  }),
+  handler: async (ctx, args) => {
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "ELEVENLABS_API_KEY environment variable is not set. Please add it in the Convex dashboard under Settings > Environment Variables."
+      );
+    }
+
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+
+    // Generate music using the composition plan
     const track = await elevenlabs.music.compose({
-      compositionPlan,
+      compositionPlan: args.compositionPlan,
     });
 
     // Convert the ReadableStream to a Blob
-    // The track is a ReadableStream that needs to be converted to bytes
     const reader = track.getReader();
     const chunks: Uint8Array[] = [];
     let result = await reader.read();
@@ -86,18 +110,62 @@ export const generateMusic = internalAction({
     // Upload to Convex storage
     const storageId = await ctx.storage.store(audioBlob);
 
-    // Step 4: Save music track metadata to database
+    // Save music track metadata to database
     const trackId: Id<"musicTracks"> = await ctx.runMutation(
       internal.agents.tools.saveMusicTrack.saveMusicTrack,
       {
         agentName: args.agentName,
-        compositionPlanId,
+        compositionPlanId: args.compositionPlanId,
         storageId,
       }
     );
 
     // Get the storage URL
     const storageUrl = await ctx.storage.getUrl(storageId);
+    if (!storageUrl) {
+      throw new Error("Failed to get storage URL for uploaded music");
+    }
+
+    return { storageUrl, trackId };
+  },
+});
+
+export const generateMusic = internalAction({
+  args: {
+    lyrics: v.string(),
+    agentName: v.string(),
+    battleId: v.optional(v.id("rapBattles")),
+    threadId: v.optional(v.string()),
+  },
+  returns: v.object({
+    storageUrl: v.string(),
+    trackId: v.id("musicTracks"),
+  }),
+  handler: async (
+    ctx,
+    args
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: <ignore>
+  ): Promise<{ storageUrl: string; trackId: Id<"musicTracks"> }> => {
+    // Step 1: Create composition plan
+    const { compositionPlan, compositionPlanId } = await ctx.runAction(
+      internal.agents.tools.generateMusic.generateCompositionPlan,
+      {
+        lyrics: args.lyrics,
+        agentName: args.agentName,
+      }
+    );
+
+    // Step 2: Compose music from the plan
+    const { storageUrl, trackId } = await ctx.runAction(
+      internal.agents.tools.generateMusic.composeMusicFromPlan,
+      {
+        compositionPlan,
+        compositionPlanId,
+        agentName: args.agentName,
+      }
+    );
+
+    // Get the storage URL (already have it from composeMusicFromPlan)
     if (!storageUrl) {
       throw new Error("Failed to get storage URL for uploaded music");
     }

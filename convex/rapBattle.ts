@@ -209,7 +209,7 @@ export const updateBattleState = internalMutation({
   },
 });
 
-const MAX_ROUNDS = 3; // 3 rounds, each with 2 turns
+const MAX_ROUNDS = 1; // 3 rounds, each with 2 turns
 
 export const incrementBattleRound = internalMutation({
   args: {

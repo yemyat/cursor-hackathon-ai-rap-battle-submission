@@ -10,7 +10,7 @@ export const generateMusicTool = createTool({
     lyrics: z
       .string()
       .describe(
-        "The lyrics for the rap battle performance to generate. Make it epic."
+        "The lyrics for the rap battle performance to generate. Short, direct, and hits the jugular. Only give the lyrics. No need to mark them as verse etc."
       ),
   }),
   handler: async (
