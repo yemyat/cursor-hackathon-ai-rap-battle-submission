@@ -1,22 +1,93 @@
-# Convex + TypeScript + ESLint + Vite + React + Clerk + Tailwind + shadcn/ui
+# AI Rap Battle Game
 
-This template provides a minimal setup to get Convex working, with TypeScript,
-ESLint and React using [Vite](https://vitejs.dev/). It uses [Clerk](https://clerk.dev/) for user authentication.
+A multiplayer rap battle game where humans control AI agents to battle each other. Users pair up as "rapping partners" to give strategic instructions to AI agents, while spectators act as cheerleaders.
 
-Start by editing `convex/myFunctions.ts` and interact with your React app.
+Built with Convex, React, TypeScript, Vite, Clerk, Tailwind CSS, and shadcn/ui.
 
-See Convex docs at https://docs.convex.dev/home
+## Quick Start
 
-## Setting up
+### Prerequisites
 
+- Node.js 18+ and pnpm installed
+- A [Clerk](https://clerk.dev/) account
+- A [Convex](https://www.convex.dev/) account
+- An [ElevenLabs](https://elevenlabs.io/) API key for music generation
+
+### Installation
+
+1. **Clone and install dependencies**
+
+```bash
+pnpm install
 ```
-npm create convex@latest -t react-vite-clerk-shadcn
+
+2. **Set up environment variables**
+
+Create a `.env.local` file in the root directory with the following React/Vite environment variables:
+
+```bash
+# Clerk Authentication
+VITE_CLERK_PUBLISHABLE_KEY="pk_test_..."
+
+# Convex Backend
+VITE_CONVEX_URL="https://your-convex-deployment.convex.cloud"
 ```
 
-Then:
+3. **Configure Convex environment variables**
 
-1. Follow steps 1 to 3 in the [Clerk onboarding guide](https://docs.convex.dev/auth/clerk#get-started)
-2. Paste the Issuer URL as `CLERK_JWT_ISSUER_DOMAIN` to your dev deployment environment variable settings on the Convex dashboard (see [docs](https://docs.convex.dev/auth/clerk#configuring-dev-and-prod-instances))
-3. Paste your publishable key as `VITE_CLERK_PUBLISHABLE_KEY="<your publishable key>"` to the `.env.local` file in this directory.
+Go to your Convex dashboard (https://dashboard.convex.dev) and add these environment variables to your deployment:
 
-If you want to sync Clerk user data via webhooks, check out this [example repo](https://github.com/thomasballinger/convex-clerk-users-table/).
+```bash
+# Clerk Configuration
+CLERK_JWT_ISSUER_DOMAIN="your-clerk-domain.clerk.accounts.dev"
+CLERK_WEBHOOK_SECRET="whsec_..."
+
+# ElevenLabs (for music generation)
+ELEVENLABS_API_KEY="sk_..."
+```
+
+4. **Set up Clerk webhook**
+
+- In your Clerk dashboard, go to Webhooks
+- Create a webhook pointing to: `https://your-convex-deployment.convex.site/clerk-users-webhook`
+- Subscribe to `user.created` and `user.updated` events
+- Copy the signing secret to `CLERK_WEBHOOK_SECRET` in Convex
+
+5. **Start development servers**
+
+```bash
+pnpm dev
+```
+
+This will start both the frontend (Vite) and backend (Convex) in parallel.
+
+## Environment Variables Reference
+
+### React (.env.local)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for authentication | Yes |
+| `VITE_CONVEX_URL` | Convex deployment URL | Yes |
+
+### Convex (Dashboard)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `CLERK_JWT_ISSUER_DOMAIN` | Clerk JWT issuer domain for auth validation | Yes |
+| `CLERK_WEBHOOK_SECRET` | Clerk webhook signing secret for user sync | Yes |
+| `ELEVENLABS_API_KEY` | ElevenLabs API key for AI-generated music | Yes |
+
+## Available Scripts
+
+- `pnpm dev` - Start both frontend and backend in development mode
+- `pnpm dev:frontend` - Start only the Vite dev server
+- `pnpm dev:backend` - Start only the Convex backend
+- `pnpm build` - Build for production
+- `pnpm preview` - Preview production build locally
+
+## Documentation
+
+- [Convex docs](https://docs.convex.dev/home)
+- [Clerk + Convex integration](https://docs.convex.dev/auth/clerk)
+- [Game concept](game-concept.md)
