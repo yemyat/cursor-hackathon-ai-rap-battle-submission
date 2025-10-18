@@ -67,6 +67,7 @@ export const generateCompositionPlan = internalAction({
 
 /**
  * Composes music from a composition plan using ElevenLabs API.
+ * Uses composeDetailed to get metadata along with the audio.
  * Converts the audio stream to a blob, stores it, and saves track metadata.
  */
 export const composeMusicFromPlan = internalAction({
@@ -89,23 +90,24 @@ export const composeMusicFromPlan = internalAction({
 
     const elevenlabs = new ElevenLabsClient({ apiKey });
 
-    // Generate music using the composition plan
-    const track = await elevenlabs.music.compose({
+    // Generate music using the composition plan with detailed response
+    // The SDK wrapper already parses the multipart response for us
+    const detailedResponse = await elevenlabs.music.composeDetailed({
       compositionPlan: args.compositionPlan,
     });
 
-    // Convert the ReadableStream to a Blob
-    const reader = track.getReader();
-    const chunks: Uint8Array[] = [];
-    let result = await reader.read();
+    // The response contains:
+    // - json.compositionPlan: { positiveGlobalStyles, negativeGlobalStyles, sections }
+    // - json.songMetadata: { title, description, genres, languages, is_explicit }
+    // - audio: Buffer (ready to use)
+    // - filename: string
 
-    while (!result.done) {
-      chunks.push(result.value);
-      result = await reader.read();
-    }
+    // You can access metadata like this:
+    // const { compositionPlan, songMetadata } = detailedResponse.json;
 
-    // Combine all chunks into a single Blob
-    const audioBlob = new Blob(chunks as BlobPart[], { type: "audio/mpeg" });
+    // Create audio blob from the Buffer (convert to Uint8Array for compatibility)
+    const audioData = new Uint8Array(detailedResponse.audio);
+    const audioBlob = new Blob([audioData], { type: "audio/mpeg" });
 
     // Upload to Convex storage
     const storageId = await ctx.storage.store(audioBlob);

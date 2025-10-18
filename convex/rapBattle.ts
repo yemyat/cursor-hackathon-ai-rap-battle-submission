@@ -169,9 +169,10 @@ export const executeRound = internalAction({
     // Build the prompt
     let prompt = `This is a rap battle with the theme: "${battle.theme}"\n\n`;
     if (args.previousLyrics) {
-      prompt += `Your opponent just dropped this:\n\n${args.previousLyrics}\n\nNow it's your turn. Respond and destroy them!`;
+      prompt += `Your opponent just dropped this:\n\n${args.previousLyrics}\n\nNow it's your turn. Respond and destroy them by writing the lyrics and then calling generateMusicTool!`;
     } else {
-      prompt += "You're going first. Drop your opening verse and set the tone!";
+      prompt +=
+        "You're going first. Write the opening lyrics and use generateMusicTool.";
     }
 
     // Save the prompt message
@@ -186,7 +187,6 @@ export const executeRound = internalAction({
       { threadId: args.threadId },
       { promptMessageId: messageId }
     );
-
     // The music generation tool will handle saving the round and chaining to the next agent
   },
 });
