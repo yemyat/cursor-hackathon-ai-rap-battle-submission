@@ -137,7 +137,7 @@ export function useFalRealtime({
 
         connection.send({
           ...INPUT_DEFAULTS,
-          prompt: nextPrompt,
+          prompt: `Rapper rapping with lyrics caption in the center: "${nextPrompt}"`,
           seed: seedRef.current,
         });
       }, segmentCycleIntervalMs);
