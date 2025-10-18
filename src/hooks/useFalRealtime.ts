@@ -14,7 +14,7 @@ const INPUT_DEFAULTS = {
 };
 
 const MAX_SEED = 10_000_000;
-const SEGMENT_CYCLE_INTERVAL_MS = 4000;
+const TOTAL_PLAYBACK_TIME_MS = 30_000; // 30 seconds
 
 function randomSeed() {
   return Math.floor(Math.random() * MAX_SEED).toFixed(0);
@@ -85,6 +85,10 @@ export function useFalRealtime({
     currentSegmentIndexRef.current = 0;
     setIsGenerating(true);
 
+    // Calculate segment cycle interval based on total playback time and number of segments
+    const segmentCycleIntervalMs =
+      segments.length > 1 ? TOTAL_PLAYBACK_TIME_MS / segments.length : 0;
+
     // Generate seed once for the entire playback session
     seedRef.current = Number(randomSeed());
 
@@ -121,7 +125,11 @@ export function useFalRealtime({
     }
 
     // Cycle through segments
-    if (segments.length > 1 && seedRef.current !== null) {
+    if (
+      segments.length > 1 &&
+      seedRef.current !== null &&
+      segmentCycleIntervalMs > 0
+    ) {
       intervalRef.current = window.setInterval(() => {
         currentSegmentIndexRef.current =
           (currentSegmentIndexRef.current + 1) % segments.length;
@@ -132,7 +140,7 @@ export function useFalRealtime({
           prompt: nextPrompt,
           seed: seedRef.current,
         });
-      }, SEGMENT_CYCLE_INTERVAL_MS);
+      }, segmentCycleIntervalMs);
     }
 
     // Cleanup on unmount or when isPlaying changes
