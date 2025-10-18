@@ -135,7 +135,7 @@ async function executeTurn(
   const POLL_INTERVAL_MS = 500;
   let instructions: string | null = null;
   let elapsed = 0;
-  
+
   while (elapsed < TURN_DURATION_MS && instructions === null) {
     instructions = await step.runQuery(
       internal.battleWorkflowHelpers.waitForInstructions,
@@ -183,23 +183,23 @@ async function executeTurn(
   );
 
   // 4. Generate composition plan (this saves it internally)
-  // const { compositionPlan, compositionPlanId } = await step.runAction(
-  //   internal.agents.tools.generateMusic.generateCompositionPlan,
-  //   {
-  //     agentName,
-  //     lyrics,
-  //   }
-  // );
+  const { compositionPlan, compositionPlanId } = await step.runAction(
+    internal.agents.tools.generateMusic.generateCompositionPlan,
+    {
+      agentName,
+      lyrics,
+    }
+  );
 
   // 5. Generate music from plan (this saves the track internally)
-  // const { trackId } = await step.runAction(
-  //   internal.agents.tools.generateMusic.composeMusicFromPlan,
-  //   {
-  //     compositionPlan,
-  //     compositionPlanId,
-  //     agentName,
-  //   }
-  // );
+  const { trackId } = await step.runAction(
+    internal.agents.tools.generateMusic.composeMusicFromPlan,
+    {
+      compositionPlan,
+      compositionPlanId,
+      agentName,
+    }
+  );
 
   console.log(`✅ Lyrics generated (${lyrics.length} chars)`);
 
@@ -221,7 +221,7 @@ async function executeTurn(
       partnerId,
       instructions: instructions || "",
       lyrics,
-      // musicTrackId: trackId,
+      musicTrackId: trackId,
       threadId,
     }
   );
