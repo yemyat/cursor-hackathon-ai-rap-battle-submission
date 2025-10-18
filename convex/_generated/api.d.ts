@@ -13,6 +13,7 @@ import type * as agents_tools_generateMusic from "../agents/tools/generateMusic.
 import type * as agents_tools_generateMusicTool from "../agents/tools/generateMusicTool.js";
 import type * as agents_tools_saveCompositionPlan from "../agents/tools/saveCompositionPlan.js";
 import type * as agents_tools_saveMusicTrack from "../agents/tools/saveMusicTrack.js";
+import type * as http from "../http.js";
 import type * as rapBattle from "../rapBattle.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   "agents/tools/generateMusicTool": typeof agents_tools_generateMusicTool;
   "agents/tools/saveCompositionPlan": typeof agents_tools_saveCompositionPlan;
   "agents/tools/saveMusicTrack": typeof agents_tools_saveMusicTrack;
+  http: typeof http;
   rapBattle: typeof rapBattle;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
