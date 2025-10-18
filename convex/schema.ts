@@ -17,6 +17,15 @@ export default defineSchema(
     numbers: defineTable({
       value: v.number(),
     }),
+    // Tracks generated music for rap battle agents
+    musicTracks: defineTable({
+      agentName: v.string(),
+      prompt: v.string(),
+      compositionPlan: v.any(),
+      storageId: v.id("_storage"),
+      durationMs: v.number(),
+      createdAt: v.number(),
+    }),
   },
   // If you ever get an error about schema mismatch
   // between your data and your schema, and you cannot

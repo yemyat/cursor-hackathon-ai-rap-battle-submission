@@ -3,6 +3,42 @@
 Write your Convex functions here.
 See https://docs.convex.dev/functions for more.
 
+## Environment Variables
+
+This project requires the following environment variables to be set:
+
+### ELEVENLABS_API_KEY
+
+Required for the music generation tool used by rap battle agents.
+
+**Setup Instructions:**
+
+1. Go to your [Convex Dashboard](https://dashboard.convex.dev)
+2. Select your project
+3. Navigate to Settings > Environment Variables
+4. Add a new environment variable:
+   - Name: `ELEVENLABS_API_KEY`
+   - Value: Your ElevenLabs API key (get one from [ElevenLabs](https://elevenlabs.io))
+
+## Agents
+
+### Rap Agent
+
+The Rap Agent includes a music generation tool that creates 30-second background tracks for rap battles.
+
+**Available Tools:**
+
+- `generateMusic`: Generates a 30-second music composition based on a text prompt using ElevenLabs Music API
+
+All generated music tracks are stored in Convex storage and tracked in the `musicTracks` table with metadata including:
+
+- Agent name
+- Prompt used
+- Composition plan
+- Storage ID
+- Duration
+- Creation timestamp
+
 A query function that takes two arguments looks like:
 
 ```ts
@@ -80,7 +116,7 @@ function handleButtonPress() {
   // OR
   // use the result once the mutation has completed
   mutation({ first: "Hello!", second: "me" }).then((result) =>
-    console.log(result),
+    console.log(result)
   );
 }
 ```
