@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 
 /**
  * Get current user from Clerk auth (returns null if not synced yet)
@@ -34,50 +34,6 @@ export const getCurrentUser = query({
 });
 
 /**
- * Sync/update user data from Clerk
- */
-export const syncUser = mutation({
-  args: {
-    username: v.optional(v.string()),
-  },
-  returns: v.id("users"),
-  handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const existing = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", identity.subject))
-      .first();
-
-    if (existing) {
-      // Update username if provided
-      if (args.username) {
-        await ctx.db.patch(existing._id, { username: args.username });
-      }
-      return existing._id;
-    }
-
-    // Create new user
-    const username =
-      args.username ||
-      identity.nickname ||
-      identity.name ||
-      identity.email?.split("@")[0] ||
-      "Anonymous";
-    const userId: Id<"users"> = await ctx.db.insert("users", {
-      clerkUserId: identity.subject,
-      username,
-      createdAt: Date.now(),
-    });
-
-    return userId;
-  },
-});
-
-/**
  * Get user by ID
  */
 export const getUser = query({
@@ -106,27 +62,33 @@ export const upsertUser = internalMutation({
     lastName: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
   },
+  returns: v.id("users"),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkUserId", args.clerkId))
       .first();
 
+    // Generate username from available data
     const username =
-      args.firstName ||
-      args.email?.split("@")[0] ||
-      "Anonymous";
+      args.firstName && args.lastName
+        ? `${args.firstName} ${args.lastName}`
+        : args.firstName ||
+          args.email?.split("@")[0] ||
+          `User${args.clerkId.slice(-6)}`;
 
     if (existing) {
       await ctx.db.patch(existing._id, { username });
       return existing._id;
     }
 
-    return await ctx.db.insert("users", {
+    const userId: Id<"users"> = await ctx.db.insert("users", {
       clerkUserId: args.clerkId,
       username,
       createdAt: Date.now(),
     });
+
+    return userId;
   },
 });
 
@@ -137,6 +99,7 @@ export const deleteUser = internalMutation({
   args: {
     clerkId: v.string(),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const user = await ctx.db
       .query("users")
@@ -146,5 +109,7 @@ export const deleteUser = internalMutation({
     if (user) {
       await ctx.db.delete(user._id);
     }
+
+    return null;
   },
 });

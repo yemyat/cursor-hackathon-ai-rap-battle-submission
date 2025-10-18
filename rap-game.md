@@ -167,6 +167,8 @@ Users can only create battles under these 4 themes:
 
 - `getCurrentUser()` - Query: Get current Clerk user (returns null if not synced)
 - `getUser({ userId })` - Query: Get user by ID
+- `upsertUser({ clerkId, email, firstName, lastName, imageUrl })` - Internal Mutation: Create/update user from webhook
+- `deleteUser({ clerkId })` - Internal Mutation: Delete user from webhook
 
 **convex/themes.ts**
 
@@ -328,10 +330,18 @@ Users can only create battles under these 4 themes:
 ### Authentication Flow
 
 1. User logs in with Clerk
-2. Clerk sends a webhook
-3. User document created in Convex with Clerk ID
-4. All subsequent operations use Convex user ID
-5. Auth verified server-side via `ctx.auth.getUserIdentity()`
+2. Clerk sends webhook to `/clerk-webhook` endpoint (convex/http.ts)
+3. Webhook calls `internal.users.upsertUser` to create/update user
+4. User document created/updated in Convex with Clerk ID and username
+5. All subsequent operations use Convex user ID
+6. Auth verified server-side via `ctx.auth.getUserIdentity()`
+
+**Webhook Integration:**
+
+- Webhook endpoint: `POST /clerk-webhook`
+- Handles events: `user.created`, `user.updated`, `user.deleted`
+- Automatically syncs user data (firstName, lastName, email)
+- Generates username from firstName + lastName or email
 
 ### Data Flow Example
 
@@ -391,15 +401,13 @@ Spectator clicks cheer button
 3. ✅ TypeScript compilation successful
 4. 🔄 Need to run once: `seedThemes()` mutation via dashboard
 
-### Frontend Setup (Needs Completion)
+### Frontend Setup
 
-1. ❌ Fix routing for theme battles page
-2. ❌ Call `syncUser()` on app initialization
-3. ❌ Fix TypeScript errors in route params
-4. ❌ Test battle creation flow
-5. ❌ Test joining and turn-taking
-6. ❌ Test cheering functionality
-7. ❌ Add missing UI features (animations, instruction reveals)
+1. ✅ Routing and TypeScript errors fixed
+2. ✅ User sync via Clerk webhooks (no manual sync needed)
+3. ✅ Sonner toast notifications for all errors and success messages
+4. ✅ All linting issues resolved
+5. 🔄 Ready for testing (requires running dev servers)
 
 ## Environment Requirements
 

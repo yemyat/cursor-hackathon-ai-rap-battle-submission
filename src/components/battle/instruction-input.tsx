@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
 import { useMutation } from "convex/react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 const MAX_CHARS = 500;
+const UPDATE_INTERVAL_MS = 100;
+const LOW_TIME_THRESHOLD_SECONDS = 3;
 
 type InstructionInputProps = {
   battleId: Id<"rapBattles">;
@@ -26,6 +29,25 @@ export function InstructionInput({
   const submitInstructions = useMutation(api.rapBattle.submitInstructions);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await submitInstructions({
+        battleId,
+        instructions: instructions.trim(),
+      });
+      setInstructions("");
+      toast.success("Instructions submitted! Agent is generating...");
+    } catch {
+      toast.error("Failed to submit instructions. Please try again.");
+    }
+    setIsSubmitting(false);
+  }, [isSubmitting, submitInstructions, battleId, instructions]);
+
   // Update time remaining every 100ms
   useEffect(() => {
     if (!deadline) {
@@ -41,37 +63,22 @@ export function InstructionInput({
       if (remaining === 0 && isYourTurn && !isSubmitting) {
         handleSubmit();
       }
-    }, 100);
+    }, UPDATE_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [deadline, isYourTurn, isSubmitting]);
+  }, [deadline, isYourTurn, isSubmitting, handleSubmit]);
 
-  const handleSubmit = async () => {
-    if (isSubmitting) {
-      return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      await submitInstructions({
-        battleId,
-        instructions: instructions.trim(),
-      });
-      setInstructions("");
-    } catch (error) {
-      console.error("Failed to submit instructions:", error);
-    }
-    setIsSubmitting(false);
-  };
-
-  const seconds = Math.ceil(timeRemaining / 1000);
-  const isLowTime = seconds <= 3 && seconds > 0;
+  const MILLISECONDS_PER_SECOND = 1000;
+  const seconds = Math.ceil(timeRemaining / MILLISECONDS_PER_SECOND);
+  const isLowTime = seconds <= LOW_TIME_THRESHOLD_SECONDS && seconds > 0;
 
   if (!isYourTurn) {
     return (
       <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
         <CardContent className="py-8 text-center">
-          <p className="text-tokyo-comment">Waiting for opponent's instructions...</p>
+          <p className="text-tokyo-comment">
+            Waiting for opponent's instructions...
+          </p>
         </CardContent>
       </Card>
     );
@@ -81,12 +88,10 @@ export function InstructionInput({
     <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span className="text-tokyo-fg text-xl">
-            Instruct {agentName}
-          </span>
+          <span className="text-tokyo-fg text-xl">Instruct {agentName}</span>
           <span
             className={`font-mono text-2xl tabular-nums transition-colors ${
-              isLowTime ? "text-red-500 animate-pulse" : "text-tokyo-cyan"
+              isLowTime ? "animate-pulse text-red-500" : "text-tokyo-cyan"
             }`}
           >
             {seconds}s
@@ -103,7 +108,7 @@ export function InstructionInput({
           value={instructions}
         />
         <div className="flex items-center justify-between">
-          <span className="text-xs text-tokyo-comment">
+          <span className="text-tokyo-comment text-xs">
             {instructions.length}/{MAX_CHARS}
           </span>
           <Button
@@ -119,4 +124,3 @@ export function InstructionInput({
     </Card>
   );
 }
-

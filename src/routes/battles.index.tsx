@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../convex/_generated/api";
@@ -12,9 +13,16 @@ export const Route = createFileRoute("/battles/")({
 function ThemesList() {
   const themes = useQuery(api.themes.listThemes);
   const createBattle = useMutation(api.rapBattle.createBattle);
+  const navigate = useNavigate();
 
-  const handleCreateBattle = async (themeId: string) => {
-    await createBattle({ themeId: themeId as Id<"themes"> });
+  const handleCreateBattle = async (themeId: Id<"themes">) => {
+    try {
+      const battleId = await createBattle({ themeId });
+      await navigate({ to: "/battles/$battleId", params: { battleId } });
+      toast.success("Battle created! Waiting for opponent...");
+    } catch {
+      toast.error("Failed to create battle. Please try again.");
+    }
   };
 
   return (
@@ -53,21 +61,13 @@ function ThemesList() {
                 </span>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 border-brand-cyan/60 bg-brand-cyan/10 text-brand-cyan hover:bg-brand-cyan/20"
-                  onClick={() => handleCreateBattle(theme._id)}
-                  variant="outline"
-                >
-                  Create Battle
-                </Button>
-                <Button
-                  className="border-zinc-700/60 bg-zinc-900/70 text-zinc-300 hover:bg-zinc-800/70"
-                  variant="outline"
-                >
-                  View Battles
-                </Button>
-              </div>
+              <Button
+                className="w-full border-brand-cyan/60 bg-brand-cyan/10 text-brand-cyan hover:bg-brand-cyan/20"
+                onClick={() => handleCreateBattle(theme._id)}
+                variant="outline"
+              >
+                Create Battle
+              </Button>
             </CardContent>
           </Card>
         ))}

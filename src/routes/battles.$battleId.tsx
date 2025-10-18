@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { AudioPlayer } from "@/components/battle/audio-player";
 import { CheerDisplay } from "@/components/battle/cheer-display";
 import { InstructionInput } from "@/components/battle/instruction-input";
@@ -72,11 +73,12 @@ function BattleView() {
     currentUser && battle?.currentTurnUserId === currentUser._id;
 
   // Determine which agent the current user controls
-  const yourAgentName = isPartner1
-    ? battle?.partner1Side
-    : isPartner2
-      ? battle?.partner2Side
-      : undefined;
+  let yourAgentName: string | undefined;
+  if (isPartner1) {
+    yourAgentName = battle?.partner1Side;
+  } else if (isPartner2) {
+    yourAgentName = battle?.partner2Side;
+  }
 
   // Audio event handlers
   const handleAudioEnded = () => {
@@ -171,7 +173,7 @@ function BattleView() {
               <div className="relative inline-block">
                 <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
                 <div className="mb-4 text-4xl">⏳</div>
-                <p className="mb-2 font-semibold text-xl text-tokyo-fg">
+                <p className="mb-2 font-semibold text-tokyo-fg text-xl">
                   Waiting for opponent...
                 </p>
                 <p className="text-sm text-tokyo-comment">
@@ -180,7 +182,14 @@ function BattleView() {
                 <Button
                   className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
+                    navigator.clipboard.writeText(window.location.href).then(
+                      () => {
+                        toast.success("Battle link copied to clipboard!");
+                      },
+                      () => {
+                        toast.error("Failed to copy link. Please try manually.");
+                      }
+                    );
                   }}
                   variant="outline"
                 >
@@ -197,26 +206,25 @@ function BattleView() {
   // Calculate total rounds that have at least one turn
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
-  // Determine battle state styling
-  const getStateStyle = () => {
-    if (battle.state === "done") {
-      return "border-tokyo-green/60 bg-tokyo-green/10 text-tokyo-green";
-    }
-    if (battle.state === "in_progress") {
-      return "border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta";
-    }
-    return "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan";
+  // Battle state styling
+  const STATE_STYLES = {
+    done: "border-tokyo-green/60 bg-tokyo-green/10 text-tokyo-green",
+    in_progress:
+      "border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta",
+    preparing: "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan",
+    waiting_for_partner:
+      "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan",
   };
 
-  const getStateLabel = () => {
-    if (battle.state === "done") {
-      return "Complete";
-    }
-    if (battle.state === "in_progress") {
-      return "In Progress";
-    }
-    return "Preparing";
+  const STATE_LABELS = {
+    done: "Complete",
+    in_progress: "In Progress",
+    preparing: "Preparing",
+    waiting_for_partner: "Waiting",
   };
+
+  const stateStyle = STATE_STYLES[battle.state] || STATE_STYLES.preparing;
+  const stateLabel = STATE_LABELS[battle.state] || STATE_LABELS.preparing;
 
   return (
     <div className="relative min-h-screen bg-zinc-950 p-6 pb-32">
@@ -246,10 +254,10 @@ function BattleView() {
               Round {battle.currentRound}/3
             </Badge>
             <Badge
-              className={`rounded-md px-3 py-1.5 font-medium text-sm backdrop-blur-sm ${getStateStyle()}`}
+              className={`rounded-md px-3 py-1.5 font-medium text-sm backdrop-blur-sm ${stateStyle}`}
               variant="outline"
             >
-              {getStateLabel()}
+              {stateLabel}
             </Badge>
           </div>
         </div>
@@ -266,33 +274,35 @@ function BattleView() {
           </div>
         )}
 
-        <div className="mt-10 flex items-center justify-center gap-3">
-          <Button
-            className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={selectedRound === 1}
-            onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
-            size="icon"
-            variant="outline"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="rounded-lg border border-tokyo-terminal/80 bg-tokyo-bgDark/80 px-5 py-2 backdrop-blur-sm">
-            <span className="font-medium text-[13px] text-tokyo-fgDark tracking-wide">
-              Round {selectedRound} of {maxRound}
-            </span>
+        {maxRound > 0 && (
+          <div className="mt-10 flex items-center justify-center gap-3">
+            <Button
+              className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={selectedRound === 1}
+              onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
+              size="icon"
+              variant="outline"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="rounded-lg border border-tokyo-terminal/80 bg-tokyo-bgDark/80 px-5 py-2 backdrop-blur-sm">
+              <span className="font-medium text-[13px] text-tokyo-fgDark tracking-wide">
+                Round {selectedRound} of {maxRound}
+              </span>
+            </div>
+            <Button
+              className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={selectedRound === maxRound}
+              onClick={() =>
+                setSelectedRound(Math.min(maxRound, selectedRound + 1))
+              }
+              size="icon"
+              variant="outline"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={selectedRound === maxRound}
-            onClick={() =>
-              setSelectedRound(Math.min(maxRound, selectedRound + 1))
-            }
-            size="icon"
-            variant="outline"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -1,9 +1,10 @@
-import type { RefObject } from "react";
 import { useMutation } from "convex/react";
+import type { RefObject } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { Turn } from "./turn-card";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import type { Turn } from "./turn-card";
 
 type AudioPlayerProps = {
   audioRef: RefObject<HTMLAudioElement>;
@@ -42,13 +43,17 @@ export function AudioPlayer({
 }: AudioPlayerProps) {
   const sendCheer = useMutation(api.cheers.sendCheer);
 
-  const handleCheer = async (
-    cheerType: "applause" | "boo" | "fire"
-  ) => {
+  const handleCheer = async (cheerType: "applause" | "boo" | "fire") => {
     try {
       await sendCheer({ battleId, cheerType });
-    } catch (error) {
-      console.error("Failed to send cheer:", error);
+      const cheerEmojis = {
+        applause: "👏",
+        fire: "🔥",
+        boo: "👎",
+      };
+      toast.success(`${cheerEmojis[cheerType]} Cheer sent!`);
+    } catch {
+      toast.error("Failed to send cheer. Please try again.");
     }
   };
   return (
