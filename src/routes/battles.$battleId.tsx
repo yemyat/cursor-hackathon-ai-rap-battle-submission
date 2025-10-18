@@ -43,33 +43,33 @@ function BattleView() {
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
   return (
-    <div className="relative min-h-screen animate-fade-up bg-zinc-950 p-6">
+    <div className="relative min-h-screen animate-fade-up bg-tokyo-bg p-6">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
-      <div className="mx-auto mb-8 max-w-7xl">
+      <div className="mx-auto mb-10 max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 font-semibold text-4xl text-zinc-50 tracking-tight md:text-5xl">
+            <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
               {battle.theme}
             </h1>
-            <p className="text-[15px] text-zinc-400">
-              {battle.agent1Name} vs {battle.agent2Name}
+            <p className="text-[15px] text-tokyo-comment">
+              {battle.agent1Name} <span className="text-tokyo-fgDark">vs</span> {battle.agent2Name}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <Badge
-              className="rounded-full border-zinc-700/60 bg-zinc-900/70 px-3 py-1.5 font-medium text-sm text-zinc-300"
+              className="rounded-md border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-1.5 font-medium text-sm text-tokyo-fgDark backdrop-blur-sm"
               variant="outline"
             >
               Round {battle.currentRound}/3
             </Badge>
             <Badge
-              className={`rounded-full px-3 py-1.5 font-medium text-sm ${
+              className={`rounded-md px-3 py-1.5 font-medium text-sm backdrop-blur-sm ${
                 battle.state === "done"
-                  ? "border-brand-mint/50 bg-brand-mint/10 text-brand-mint"
+                  ? "border-tokyo-green/60 bg-tokyo-green/10 text-tokyo-green"
                   : battle.state === "in_progress"
-                    ? "border-brand-purple/50 bg-brand-purple/10 text-brand-purple"
-                    : "border-brand-cyan/50 bg-brand-cyan/10 text-brand-cyan"
+                    ? "border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta"
+                    : "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan"
               }`}
               variant="outline"
             >
@@ -80,23 +80,23 @@ function BattleView() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-10 flex items-center justify-center gap-3">
           <Button
-            className="hover:glow-accent h-10 w-10 rounded-full border-zinc-700/60 bg-zinc-900/70 transition-all duration-300 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={selectedRound === 1}
             onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
             size="icon"
             variant="outline"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="rounded-full border border-zinc-800/60 bg-zinc-950/60 px-6 py-2.5 backdrop-blur-sm">
-            <span className="font-medium text-sm text-zinc-300">
+          <div className="rounded-lg border border-tokyo-terminal/80 bg-tokyo-bgDark/80 px-5 py-2 backdrop-blur-sm">
+            <span className="font-medium text-[13px] text-tokyo-fgDark tracking-wide">
               Round {selectedRound} of {maxRound}
             </span>
           </div>
           <Button
-            className="hover:glow-accent h-10 w-10 rounded-full border-zinc-700/60 bg-zinc-900/70 transition-all duration-300 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={selectedRound === maxRound}
             onClick={() =>
               setSelectedRound(Math.min(maxRound, selectedRound + 1))
@@ -104,52 +104,58 @@ function BattleView() {
             size="icon"
             variant="outline"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6">
+        <div className="space-y-5">
+          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-center font-semibold text-2xl text-zinc-50 tracking-tight">
-                {battle.agent1Name}
-              </CardTitle>
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-tokyo-blue shadow-[0_0_8px_rgba(122,162,247,0.6)]" />
+                <CardTitle className="text-center font-semibold text-xl text-tokyo-fg tracking-tight">
+                  {battle.agent1Name}
+                </CardTitle>
+              </div>
             </CardHeader>
           </Card>
 
           {agent1Turn ? (
             <TurnCard turn={agent1Turn} />
           ) : (
-            <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
-              <CardContent className="py-20 text-center">
+            <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
+              <CardContent className="py-16 text-center">
                 <div className="relative inline-block">
                   <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-                  <p className="text-zinc-500">Waiting for verse...</p>
+                  <p className="text-tokyo-comment">Waiting for verse...</p>
                 </div>
               </CardContent>
             </Card>
           )}
         </div>
 
-        <div className="space-y-6">
-          <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+        <div className="space-y-5">
+          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-center font-semibold text-2xl text-zinc-50 tracking-tight">
-                {battle.agent2Name}
-              </CardTitle>
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-tokyo-magenta shadow-[0_0_8px_rgba(187,154,247,0.6)]" />
+                <CardTitle className="text-center font-semibold text-xl text-tokyo-fg tracking-tight">
+                  {battle.agent2Name}
+                </CardTitle>
+              </div>
             </CardHeader>
           </Card>
 
           {agent2Turn ? (
             <TurnCard turn={agent2Turn} />
           ) : (
-            <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
-              <CardContent className="py-20 text-center">
+            <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
+              <CardContent className="py-16 text-center">
                 <div className="relative inline-block">
                   <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-                  <p className="text-zinc-500">Waiting for verse...</p>
+                  <p className="text-tokyo-comment">Waiting for verse...</p>
                 </div>
               </CardContent>
             </Card>
@@ -176,11 +182,11 @@ function TurnCard({ turn }: { turn: Turn }) {
   });
 
   return (
-    <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+    <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-white/5 backdrop-blur-xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <Badge
-            className="rounded-full border-zinc-700/60 bg-zinc-900/70 px-2.5 py-1 font-medium text-[12px] text-zinc-300"
+            className="rounded-md border-tokyo-terminal/80 bg-tokyo-bgDark/60 px-2.5 py-1 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider"
             variant="outline"
           >
             Turn {turn.turnNumber}
@@ -189,23 +195,23 @@ function TurnCard({ turn }: { turn: Turn }) {
       </CardHeader>
       <CardContent className="space-y-5 pt-2">
         <div>
-          <h4 className="mb-3 font-medium text-xs text-zinc-400 uppercase tracking-wider">
+          <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
             Lyrics
           </h4>
-          <p className="whitespace-pre-wrap font-medium text-[15px] text-zinc-200 leading-7">
+          <p className="whitespace-pre-wrap font-medium text-[15px] text-tokyo-fg leading-7">
             {turn.lyrics}
           </p>
         </div>
 
         {musicTrack && (
           <>
-            <Separator className="bg-white/5" />
+            <Separator className="bg-tokyo-terminal/60" />
             <div>
-              <h4 className="mb-3 font-medium text-xs text-zinc-400 uppercase tracking-wider">
+              <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
                 Audio
               </h4>
               <audio
-                className="w-full rounded-lg ring-1 ring-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                className="w-full rounded-lg ring-1 ring-tokyo-terminal/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tokyo-blue/50"
                 controls
                 src={musicTrack.storageUrl ?? undefined}
               >
