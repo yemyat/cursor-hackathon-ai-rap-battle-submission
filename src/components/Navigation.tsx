@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Flame } from "lucide-react";
 
 export function Navigation() {
   const router = useRouterState();
@@ -20,15 +19,9 @@ export function Navigation() {
             className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105"
             to="/battles"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-mint to-brand-cyan shadow-brand-mint/20 shadow-lg transition-all duration-300 group-hover:shadow-brand-mint/40 group-hover:shadow-xl">
-              <Flame className="h-7 w-7 text-zinc-950" />
-            </div>
             <div className="flex flex-col">
               <span className="font-bold text-2xl text-zinc-50 leading-none tracking-tight">
                 Rap Battles
-              </span>
-              <span className="font-medium text-brand-mint text-xs tracking-wide">
-                AI SHOWDOWN
               </span>
             </div>
           </Link>
