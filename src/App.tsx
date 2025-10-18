@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { SignInButton, UserButton } from "@clerk/clerk-react";
 import {
   Authenticated,
@@ -6,12 +5,13 @@ import {
   useMutation,
   useQuery,
 } from "convex/react";
+import { Button } from "@/components/ui/button";
 import { api } from "../convex/_generated/api";
 
 export default function App() {
   return (
-    <main className="container max-w-2xl flex flex-col gap-8">
-      <h1 className="text-4xl font-extrabold my-8 text-center">
+    <main className="container flex max-w-2xl flex-col gap-8">
+      <h1 className="my-8 text-center font-extrabold text-4xl">
         Convex + React (Vite) + Clerk Auth
       </h1>
       <Authenticated>
@@ -38,7 +38,7 @@ function SignedIn() {
   return (
     <>
       <p>Welcome {viewer}!</p>
-      <p className="flex gap-4 items-center">
+      <p className="flex items-center gap-4">
         This is you:
         <UserButton afterSignOutUrl="#" />
       </p>
@@ -59,18 +59,18 @@ function SignedIn() {
         Numbers:{" "}
         {numbers?.length === 0
           ? "Click the button!"
-          : numbers?.join(", ") ?? "..."}
+          : (numbers?.join(", ") ?? "...")}
       </p>
       <p>
         Edit{" "}
-        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono font-semibold text-sm">
           convex/myFunctions.ts
         </code>{" "}
         to change your backend
       </p>
       <p>
         Edit{" "}
-        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono font-semibold text-sm">
           src/App.tsx
         </code>{" "}
         to change your frontend
@@ -79,8 +79,9 @@ function SignedIn() {
         Check out{" "}
         <a
           className="font-medium text-primary underline underline-offset-4"
-          target="_blank"
           href="https://docs.convex.dev/home"
+          rel="noopener"
+          target="_blank"
         >
           Convex docs
         </a>

@@ -1,6 +1,6 @@
+import { Component, type ReactNode } from "react";
 import { Code } from "@/components/typography/code";
 import { Link } from "@/components/typography/link";
-import { Component, ReactNode } from "react";
 
 // NOTE: Once you get Clerk working you can simplify this error boundary
 // or remove it entirely.
@@ -52,8 +52,8 @@ export class ErrorBoundary extends Component<
   render() {
     if (this.state.error !== null) {
       return (
-        <div className="bg-red-100 p-8 flex flex-col gap-4 container">
-          <h1 className="text-xl font-bold">
+        <div className="container flex flex-col gap-4 bg-red-100 p-8">
+          <h1 className="font-bold text-xl">
             Caught an error while rendering:
           </h1>
           {this.state.error}

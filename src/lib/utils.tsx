@@ -1,5 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
-import { ForwardRefRenderFunction, forwardRef } from "react";
+import { type ForwardRefRenderFunction, forwardRef } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -18,11 +18,11 @@ export function fr<T = HTMLElement, P = React.HTMLAttributes<T>>(
 // styled element
 export function se<
   T = HTMLElement,
-  P extends React.HTMLAttributes<T> = React.HTMLAttributes<T>
+  P extends React.HTMLAttributes<T> = React.HTMLAttributes<T>,
 >(Tag: keyof React.ReactHTML, ...classNames: ClassValue[]) {
   const component = fr<T, P>(({ className, ...props }, ref) => (
     // @ts-expect-error Too complicated for TypeScript
-    <Tag ref={ref} className={cn(...classNames, className)} {...props} />
+    <Tag className={cn(...classNames, className)} ref={ref} {...props} />
   ));
   component.displayName = Tag[0].toUpperCase() + Tag.slice(1);
   return component;

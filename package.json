@@ -55,24 +55,31 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.6",
     "@types/node": "^20.7.0",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.4",
     "autoprefixer": "^10.4.16",
-    "eslint": "^9.3.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.30",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.2.2",
-    "typescript-eslint": "^8.24.1",
+    "ultracite": "5.6.4",
     "vite": "^5.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
       "@tailwindcss/oxide"
+    ]
+  },
+  "packageManager": "pnpm@10.17.0+sha512.fce8a3dd29a4ed2ec566fb53efbb04d8c44a0f05bc6f24a73046910fb9c3ce7afa35a0980500668fa3573345bd644644fa98338fa168235c80f4aa17aa17fbef",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "pnpm dlx ultracite fix"
     ]
   }
 }
