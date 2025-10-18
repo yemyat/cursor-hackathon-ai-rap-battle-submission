@@ -49,6 +49,7 @@ export function useFalRealtime({
   const currentSegmentIndexRef = useRef(0);
   const segmentsRef = useRef<string[]>([]);
   const intervalRef = useRef<number | null>(null);
+  const seedRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Configure fal client with proxy URL
@@ -70,6 +71,7 @@ export function useFalRealtime({
       }
       setIsGenerating(false);
       currentSegmentIndexRef.current = 0;
+      seedRef.current = null;
       return;
     }
 
@@ -82,6 +84,9 @@ export function useFalRealtime({
     segmentsRef.current = segments;
     currentSegmentIndexRef.current = 0;
     setIsGenerating(true);
+
+    // Generate seed once for the entire playback session
+    seedRef.current = Number(randomSeed());
 
     // Create connection to fal.ai real-time API
     const connection = fal.realtime.connect("fal-ai/flux-schnell-realtime", {
@@ -107,25 +112,25 @@ export function useFalRealtime({
     connectionRef.current = connection;
 
     // Send initial prompt
-    connection.send({
-      ...INPUT_DEFAULTS,
-      prompt: segments[0],
-      seed: Number(randomSeed()),
-    });
+    if (seedRef.current !== null) {
+      connection.send({
+        ...INPUT_DEFAULTS,
+        prompt: segments[0],
+        seed: seedRef.current,
+      });
+    }
 
     // Cycle through segments
-    if (segments.length > 1) {
+    if (segments.length > 1 && seedRef.current !== null) {
       intervalRef.current = window.setInterval(() => {
         currentSegmentIndexRef.current =
           (currentSegmentIndexRef.current + 1) % segments.length;
         const nextPrompt = segments[currentSegmentIndexRef.current];
 
-        console.log("nextPrompt", nextPrompt);
-
         connection.send({
           ...INPUT_DEFAULTS,
           prompt: nextPrompt,
-          seed: Number(randomSeed()),
+          seed: seedRef.current,
         });
       }, SEGMENT_CYCLE_INTERVAL_MS);
     }
