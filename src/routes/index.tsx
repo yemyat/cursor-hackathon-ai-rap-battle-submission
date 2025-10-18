@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/")({
@@ -50,59 +50,59 @@ function CreateBattle() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="theme" className="text-zinc-200">
+              <Label className="text-zinc-200" htmlFor="theme">
                 Battle Theme
               </Label>
               <Input
+                className="border-zinc-700 bg-zinc-800 text-zinc-50"
                 id="theme"
-                placeholder="Tech vs. Nature"
-                value={formData.theme}
                 onChange={(e) =>
                   setFormData({ ...formData, theme: e.target.value })
                 }
+                placeholder="Tech vs. Nature"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.theme}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agent1" className="text-zinc-200">
+              <Label className="text-zinc-200" htmlFor="agent1">
                 Agent 1 Name
               </Label>
               <Input
+                className="border-zinc-700 bg-zinc-800 text-zinc-50"
                 id="agent1"
-                placeholder="CodeSlinger"
-                value={formData.agent1Name}
                 onChange={(e) =>
                   setFormData({ ...formData, agent1Name: e.target.value })
                 }
+                placeholder="CodeSlinger"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.agent1Name}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agent2" className="text-zinc-200">
+              <Label className="text-zinc-200" htmlFor="agent2">
                 Agent 2 Name
               </Label>
               <Input
+                className="border-zinc-700 bg-zinc-800 text-zinc-50"
                 id="agent2"
-                placeholder="EarthMC"
-                value={formData.agent2Name}
                 onChange={(e) =>
                   setFormData({ ...formData, agent2Name: e.target.value })
                 }
+                placeholder="EarthMC"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.agent2Name}
               />
             </div>
 
             <Button
-              type="submit"
               className="w-full bg-zinc-50 text-zinc-900 hover:bg-zinc-200"
               disabled={isLoading}
+              type="submit"
             >
               {isLoading ? "Starting Battle..." : "Start Battle"}
             </Button>

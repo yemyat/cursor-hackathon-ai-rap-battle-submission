@@ -292,12 +292,11 @@ export const getRoundsByBattle = query({
   args: {
     battleId: v.id("rapBattles"),
   },
-  handler: async (ctx, args) => {
-    return await ctx.db
+  handler: async (ctx, args) =>
+    await ctx.db
       .query("rounds")
       .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
-      .collect();
-  },
+      .collect(),
 });
 
 export const getMusicTrack = query({

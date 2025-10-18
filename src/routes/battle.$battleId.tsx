@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -44,13 +44,12 @@ function BattleView() {
           </div>
           <div className="flex items-center gap-4">
             <Badge
-              variant="outline"
               className="border-zinc-700 bg-zinc-800 text-zinc-50"
+              variant="outline"
             >
               Round {battle.currentRound}/6
             </Badge>
             <Badge
-              variant="outline"
               className={(() => {
                 if (battle.state === "done") {
                   return "border-green-700 bg-green-900/20 text-green-400";
@@ -60,6 +59,7 @@ function BattleView() {
                 }
                 return "border-zinc-700 bg-zinc-800 text-zinc-400";
               })()}
+              variant="outline"
             >
               {battle.state === "done" && "Complete"}
               {battle.state === "in_progress" && "In Progress"}
@@ -132,8 +132,8 @@ function RoundCard({ round }: { round: Round }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <Badge
-            variant="outline"
             className="border-zinc-700 bg-zinc-800 text-zinc-400"
+            variant="outline"
           >
             Round {round.roundNumber}
           </Badge>
@@ -153,8 +153,8 @@ function RoundCard({ round }: { round: Round }) {
                 Audio
               </h4>
               <audio
-                controls
                 className="w-full"
+                controls
                 src={musicTrack.storageUrl ?? undefined}
               >
                 <track kind="captions" />
