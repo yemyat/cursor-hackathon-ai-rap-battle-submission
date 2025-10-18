@@ -107,7 +107,7 @@ export default defineSchema(
       instructions: v.string(),
       instructionSubmittedAt: v.number(),
       lyrics: v.string(),
-      musicTrackId: v.id("musicTracks"),
+      musicTrackId: v.optional(v.id("musicTracks")),
       threadId: v.string(),
       createdAt: v.number(),
     }).index("by_battle", ["rapBattleId"]),

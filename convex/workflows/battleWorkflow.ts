@@ -30,6 +30,8 @@ export const battleWorkflow = workflow.define({
     partner2UserId: v.id("users"),
   },
   handler: async (step, args): Promise<void> => {
+    console.log("🎤 Starting battle workflow", { battleId: args.battleId });
+    
     // Get battle details
     const battle = await step.runQuery(internal.rapBattle.getBattleInternal, {
       battleId: args.battleId,
@@ -39,8 +41,11 @@ export const battleWorkflow = workflow.define({
       throw new Error("Battle not found");
     }
 
+    console.log("✅ Battle loaded", { agent1: battle.agent1Name, agent2: battle.agent2Name });
+
     // Run 3 rounds
     for (let round = 1; round <= MAX_ROUNDS; round++) {
+      console.log(`🔄 Starting round ${round}/${MAX_ROUNDS}`);
       // Agent 1's turn
       await executeTurn(step, {
         battleId: args.battleId,
@@ -61,12 +66,14 @@ export const battleWorkflow = workflow.define({
 
       // Increment round after both turns complete
       if (round < MAX_ROUNDS) {
+        console.log(`✅ Round ${round} complete, incrementing`);
         await step.runMutation(internal.rapBattle.incrementBattleRound, {
           battleId: args.battleId,
         });
       }
     }
 
+    console.log("🏁 Battle complete!");
     // Mark battle as done
     await step.runMutation(internal.rapBattle.updateBattleState, {
       battleId: args.battleId,
@@ -91,6 +98,8 @@ async function executeTurn(
 ): Promise<void> {
   const { battleId, roundNumber, agentName, threadId, partnerId } = params;
 
+  console.log(`🎵 Turn started: ${agentName} (Round ${roundNumber})`);
+
   // 1. Wait for user instructions (with timeout)
   const turnStartTime = Date.now();
   const deadline = turnStartTime + TURN_DURATION_MS;
@@ -103,6 +112,8 @@ async function executeTurn(
     deadline,
   });
 
+  console.log(`⏱️  Waiting for instructions (${TURN_DURATION_MS}ms)...`);
+
   // Wait for instructions or timeout
   const instructions = await step.runQuery(
     internal.battleWorkflowHelpers.waitForInstructions,
@@ -114,6 +125,13 @@ async function executeTurn(
     { runAfter: TURN_DURATION_MS }
   );
 
+  console.log(`📝 Instructions received: ${instructions ? `"${instructions}"` : "timeout"}`);
+
+  // Clear the turn state immediately after instructions received/timeout
+  await step.runMutation(internal.battleWorkflowHelpers.clearCurrentTurn, {
+    battleId,
+  });
+
   // 2. Get previous opponent's lyrics for context
   const previousLyrics = await step.runQuery(
     internal.battleWorkflowHelpers.getPreviousOpponentLyrics,
@@ -123,7 +141,10 @@ async function executeTurn(
     }
   );
 
+  console.log(`🔍 Previous lyrics: ${previousLyrics ? "found" : "none"}`);
+
   // 3. Generate lyrics using the agent
+  console.log(`✍️  Generating lyrics for ${agentName}...`);
   const lyrics = await step.runAction(
     internal.battleWorkflowHelpers.generateLyrics,
     {
@@ -136,29 +157,33 @@ async function executeTurn(
   );
 
   // 4. Generate composition plan (this saves it internally)
-  const { compositionPlan, compositionPlanId } = await step.runAction(
-    internal.agents.tools.generateMusic.generateCompositionPlan,
-    {
-      agentName,
-      lyrics,
-    }
-  );
+  // const { compositionPlan, compositionPlanId } = await step.runAction(
+  //   internal.agents.tools.generateMusic.generateCompositionPlan,
+  //   {
+  //     agentName,
+  //     lyrics,
+  //   }
+  // );
 
   // 5. Generate music from plan (this saves the track internally)
-  const { trackId } = await step.runAction(
-    internal.agents.tools.generateMusic.composeMusicFromPlan,
-    {
-      compositionPlan,
-      compositionPlanId,
-      agentName,
-    }
-  );
+  // const { trackId } = await step.runAction(
+  //   internal.agents.tools.generateMusic.composeMusicFromPlan,
+  //   {
+  //     compositionPlan,
+  //     compositionPlanId,
+  //     agentName,
+  //   }
+  // );
+
+  console.log(`✅ Lyrics generated (${lyrics.length} chars)`);
 
   // 8. Save turn record
   const battleData = await step.runQuery(internal.rapBattle.getBattleInternal, {
     battleId,
   });
   const turnNumber = agentName === battleData.agent1Name ? 1 : 2;
+
+  console.log(`💾 Saving turn ${turnNumber}...`);
 
   const turnId = await step.runMutation(
     internal.battleWorkflowHelpers.saveTurn,
@@ -170,14 +195,18 @@ async function executeTurn(
       partnerId,
       instructions: instructions || "",
       lyrics,
-      musicTrackId: trackId,
+      // musicTrackId: trackId,
       threadId,
     }
   );
 
+  console.log(`✅ Turn saved (${turnId})`);
+
   // 6. Start synchronized playback
   const serverTime = Date.now();
   const duration = MUSIC_DURATION_MS;
+
+  console.log(`▶️  Starting playback (${duration}ms)...`);
 
   await step.runMutation(
     internal.battleWorkflowHelpers.startSynchronizedPlayback,
@@ -195,4 +224,6 @@ async function executeTurn(
     { battleId },
     { runAfter: duration + PLAYBACK_BUFFER_MS }
   );
+
+  console.log(`✅ Playback complete for ${agentName}`);
 }

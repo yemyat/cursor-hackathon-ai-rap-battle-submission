@@ -34,6 +34,27 @@ export const setCurrentTurn = internalMutation({
 });
 
 /**
+ * Clear current turn state after instructions received or timeout
+ */
+export const clearCurrentTurn = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.battleId, {
+      currentTurnUserId: undefined,
+      currentTurnStartTime: undefined,
+      currentTurnDeadline: undefined,
+      pendingInstructions: undefined,
+      pendingPartnerId: undefined,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
  * Wait for user instructions or return empty string on timeout
  */
 export const waitForInstructions = internalQuery({
@@ -155,7 +176,7 @@ export const saveTurn = internalMutation({
     partnerId: v.id("users"),
     instructions: v.string(),
     lyrics: v.string(),
-    musicTrackId: v.id("musicTracks"),
+    musicTrackId: v.optional(v.id("musicTracks")),
     threadId: v.string(),
   },
   returns: v.id("turns"),

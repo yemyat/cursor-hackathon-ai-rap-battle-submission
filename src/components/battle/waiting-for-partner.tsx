@@ -1,3 +1,4 @@
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,9 +72,14 @@ export function WaitingForPartner({
                   <p className="mb-2 text-sm text-tokyo-comment">
                     You're playing as {partner1Side}
                   </p>
-                  <p className="text-sm text-tokyo-comment">
+                  <p className="mb-4 text-sm text-tokyo-comment">
                     Share this battle link with someone to start!
                   </p>
+                  <div className="mb-6 flex justify-center">
+                    <div className="rounded-lg bg-white p-4">
+                      <QRCodeSVG size={200} value={window.location.href} />
+                    </div>
+                  </div>
                   <Button
                     className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
                     onClick={() => {

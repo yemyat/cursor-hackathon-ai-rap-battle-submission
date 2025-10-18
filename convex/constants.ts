@@ -1,1 +1,1 @@
-export const MUSIC_DURATION_MS = 30_000;
+export const MUSIC_DURATION_MS = 1000;

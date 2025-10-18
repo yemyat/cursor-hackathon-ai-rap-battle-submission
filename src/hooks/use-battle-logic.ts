@@ -26,11 +26,11 @@ export function useBattleLogic(battleId: string) {
   // Get music tracks for current round
   const agent1Track = useQuery(
     api.rapBattle.getMusicTrack,
-    agent1Turn ? { trackId: agent1Turn.musicTrackId } : "skip"
+    agent1Turn?.musicTrackId ? { trackId: agent1Turn.musicTrackId } : "skip"
   );
   const agent2Track = useQuery(
     api.rapBattle.getMusicTrack,
-    agent2Turn ? { trackId: agent2Turn.musicTrackId } : "skip"
+    agent2Turn?.musicTrackId ? { trackId: agent2Turn.musicTrackId } : "skip"
   );
 
   // Get currently playing track info
@@ -39,7 +39,7 @@ export function useBattleLogic(battleId: string) {
     : null;
   const currentTrack = useQuery(
     api.rapBattle.getMusicTrack,
-    currentTurn ? { trackId: currentTurn.musicTrackId } : "skip"
+    currentTurn?.musicTrackId ? { trackId: currentTurn.musicTrackId } : "skip"
   );
 
   // Determine user role

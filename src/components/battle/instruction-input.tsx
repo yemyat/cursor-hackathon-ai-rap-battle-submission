@@ -1,5 +1,5 @@
-import { useMutation } from "convex/react";
-import { useCallback, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,9 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
 const MAX_CHARS = 500;
+const TIMER_UPDATE_INTERVAL_MS = 100;
+const MS_TO_SECONDS = 1000;
+const URGENT_THRESHOLD_SECONDS = 3;
 
 type InstructionInputProps = {
   battleId: Id<"rapBattles">;
@@ -23,6 +26,24 @@ export function InstructionInput({
   const [instructions, setInstructions] = useState("");
   const submitInstructions = useMutation(api.rapBattle.submitInstructions);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const turnInfo = useQuery(api.rapBattle.getCurrentTurnInfo, { battleId });
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (!(turnInfo?.currentTurnDeadline && isYourTurn)) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, turnInfo.currentTurnDeadline - Date.now());
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        clearInterval(interval);
+      }
+    }, TIMER_UPDATE_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [turnInfo?.currentTurnDeadline, isYourTurn]);
 
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) {
@@ -43,7 +64,12 @@ export function InstructionInput({
     setIsSubmitting(false);
   }, [isSubmitting, submitInstructions, battleId, instructions]);
 
-  if (!isYourTurn) {
+  // Hide input if not your turn OR if deadline has passed
+  const deadlinePassed = turnInfo?.currentTurnDeadline 
+    ? Date.now() > turnInfo.currentTurnDeadline 
+    : false;
+
+  if (!isYourTurn || deadlinePassed) {
     return (
       <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
         <CardContent className="py-8 text-center">
@@ -55,11 +81,24 @@ export function InstructionInput({
     );
   }
 
+  const secondsLeft = Math.ceil(timeLeft / MS_TO_SECONDS);
+
   return (
     <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="text-tokyo-fg text-xl">
-          Instruct {agentName}
+        <CardTitle className="flex items-center justify-between text-tokyo-fg text-xl">
+          <span>Instruct {agentName}</span>
+          {isYourTurn && timeLeft > 0 && (
+            <span
+              className={`font-mono text-lg ${
+                secondsLeft <= URGENT_THRESHOLD_SECONDS
+                  ? "animate-pulse text-tokyo-red"
+                  : "text-tokyo-orange"
+              }`}
+            >
+              {secondsLeft}s
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
