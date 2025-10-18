@@ -15,7 +15,7 @@ type AudioSyncProps = {
 
 /**
  * AudioSync component handles server-synchronized audio playback.
- * 
+ *
  * It calculates the current playback position based on server timestamps
  * to ensure all clients are hearing the same audio at the same time,
  * similar to a Kahoot-like synchronized experience.
@@ -32,7 +32,7 @@ export function AudioSync({
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !trackUrl) {
+    if (!(audio && trackUrl)) {
       return;
     }
 
@@ -52,13 +52,19 @@ export function AudioSync({
       const positionSeconds = elapsedMs / MS_TO_SECONDS;
 
       // Only sync if we're within the track duration
-      if (positionSeconds >= 0 && positionSeconds < playbackDuration / MS_TO_SECONDS) {
+      if (
+        positionSeconds >= 0 &&
+        positionSeconds < playbackDuration / MS_TO_SECONDS
+      ) {
         // Sync audio position with server time
         const currentPos = audio.currentTime;
         const targetPos = positionSeconds;
-        
+
         // Only seek if we're more than threshold off (to avoid constant micro-adjustments)
-        if (Math.abs(currentPos - targetPos) > SYNC_THRESHOLD_SECONDS && !hasTriedPlayRef.current) {
+        if (
+          Math.abs(currentPos - targetPos) > SYNC_THRESHOLD_SECONDS &&
+          !hasTriedPlayRef.current
+        ) {
           audio.currentTime = targetPos;
         }
 
@@ -84,13 +90,7 @@ export function AudioSync({
       }
       hasTriedPlayRef.current = false;
     }
-  }, [
-    audioRef,
-    playbackStartedAt,
-    playbackDuration,
-    playbackState,
-    trackUrl,
-  ]);
+  }, [audioRef, playbackStartedAt, playbackDuration, playbackState, trackUrl]);
 
   // Handle audio ended event
   useEffect(() => {
