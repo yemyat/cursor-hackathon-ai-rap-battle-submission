@@ -33,13 +33,18 @@ function BattleView() {
     battleId: battleId as Id<"rapBattles">,
   });
 
-  const [selectedRound, setSelectedRound] = useState(1);
-  const [currentlyPlayingTurn, setCurrentlyPlayingTurn] =
-    useState<Id<"turns"> | null>(null);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const joinBattle = useMutation(api.rapBattle.joinBattle);
+  const setPlayingTurn = useMutation(api.rapBattle.setPlayingTurn);
+  const setActiveRound = useMutation(api.rapBattle.setActiveRound);
+  const advancePlayback = useMutation(api.rapBattle.advancePlayback);
+  const startRoundPlayback = useMutation(api.rapBattle.startRoundPlayback);
+
+  // Use Convex-controlled state instead of local state
+  const selectedRound = battle?.activeRound ?? 1;
+  const currentlyPlayingTurn = battle?.currentlyPlayingTurnId ?? null;
 
   // Get turns for the selected round
   const roundTurns =
@@ -83,28 +88,41 @@ function BattleView() {
   }
 
   // Audio event handlers
-  const handleAudioEnded = () => {
-    if (currentlyPlayingTurn === agent1Turn?._id && agent2Turn) {
-      // Agent1 finished, play agent2
-      setCurrentlyPlayingTurn(agent2Turn._id);
-    } else if (
-      currentlyPlayingTurn === agent2Turn?._id &&
-      selectedRound < maxRound
-    ) {
-      // Agent2 finished, advance to next round
-      setSelectedRound(selectedRound + 1);
-    } else {
-      // No more to play
-      setCurrentlyPlayingTurn(null);
+  const handleAudioEnded = async () => {
+    if (!battle) {
+      return;
+    }
+    if (!currentlyPlayingTurn) {
+      return;
+    }
+
+    try {
+      await advancePlayback({
+        battleId: battle._id,
+        currentTurnId: currentlyPlayingTurn,
+      });
+    } catch {
+      toast.error("Failed to advance playback");
     }
   };
 
   const handleAudioPlay = () => {
-    // Audio play is managed through currentlyPlayingTurn state
+    // Audio play is managed through currentlyPlayingTurn state from Convex
   };
 
-  const handleAudioPause = () => {
-    setCurrentlyPlayingTurn(null);
+  const handleAudioPause = async () => {
+    if (!battle) {
+      return;
+    }
+
+    try {
+      await setPlayingTurn({
+        battleId: battle._id,
+        turnId: null,
+      });
+    } catch {
+      toast.error("Failed to pause");
+    }
   };
 
   // Effect to load and play audio when currentlyPlayingTurn changes
@@ -128,23 +146,31 @@ function BattleView() {
     }
   }, [currentlyPlayingTurn, currentTrack?.storageUrl]);
 
-  // Reset playing state when round changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: We intentionally want this to run only when selectedRound changes
-  useEffect(() => {
-    setCurrentlyPlayingTurn(null);
-  }, [selectedRound]);
-
   // Autoplay agent1 when round is ready (only after user has interacted)
   useEffect(() => {
     if (
       hasUserInteracted &&
+      battle &&
       agent1Turn &&
       agent1Track &&
       !currentlyPlayingTurn
     ) {
-      setCurrentlyPlayingTurn(agent1Turn._id);
+      startRoundPlayback({
+        battleId: battle._id,
+        roundNumber: selectedRound,
+      }).catch(() => {
+        // Silently fail if autoplay doesn't work
+      });
     }
-  }, [hasUserInteracted, agent1Turn, agent1Track, currentlyPlayingTurn]);
+  }, [
+    hasUserInteracted,
+    battle,
+    agent1Turn,
+    agent1Track,
+    currentlyPlayingTurn,
+    selectedRound,
+    startRoundPlayback,
+  ]);
 
   if (!battle) {
     return (
@@ -324,7 +350,17 @@ function BattleView() {
             <Button
               className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={selectedRound === 1}
-              onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
+              onClick={async () => {
+                const newRound = Math.max(1, selectedRound - 1);
+                try {
+                  await setActiveRound({
+                    battleId: battle._id,
+                    roundNumber: newRound,
+                  });
+                } catch {
+                  toast.error("Failed to change round");
+                }
+              }}
               size="icon"
               variant="outline"
             >
@@ -338,9 +374,17 @@ function BattleView() {
             <Button
               className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
               disabled={selectedRound === maxRound}
-              onClick={() =>
-                setSelectedRound(Math.min(maxRound, selectedRound + 1))
-              }
+              onClick={async () => {
+                const newRound = Math.min(maxRound, selectedRound + 1);
+                try {
+                  await setActiveRound({
+                    battleId: battle._id,
+                    roundNumber: newRound,
+                  });
+                } catch {
+                  toast.error("Failed to change round");
+                }
+              }}
               size="icon"
               variant="outline"
             >
@@ -434,16 +478,30 @@ function BattleView() {
         onAudioEnded={handleAudioEnded}
         onAudioPause={handleAudioPause}
         onAudioPlay={handleAudioPlay}
-        onPlayAgent1={() => {
+        onPlayAgent1={async () => {
           if (agent1Turn) {
             setHasUserInteracted(true);
-            setCurrentlyPlayingTurn(agent1Turn._id);
+            try {
+              await setPlayingTurn({
+                battleId: battle._id,
+                turnId: agent1Turn._id,
+              });
+            } catch {
+              toast.error("Failed to start playback");
+            }
           }
         }}
-        onPlayAgent2={() => {
+        onPlayAgent2={async () => {
           if (agent2Turn) {
             setHasUserInteracted(true);
-            setCurrentlyPlayingTurn(agent2Turn._id);
+            try {
+              await setPlayingTurn({
+                battleId: battle._id,
+                turnId: agent2Turn._id,
+              });
+            } catch {
+              toast.error("Failed to start playback");
+            }
           }
         }}
       />

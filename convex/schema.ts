@@ -80,6 +80,9 @@ export default defineSchema(
       currentTurnDeadline: v.optional(v.number()),
       pendingInstructions: v.optional(v.string()),
       pendingPartnerId: v.optional(v.id("users")),
+      // Shared playback state for all viewers
+      activeRound: v.number(), // Which round all users are currently viewing
+      currentlyPlayingTurnId: v.optional(v.id("turns")), // Which turn is playing
       createdAt: v.number(),
       updatedAt: v.number(),
     })

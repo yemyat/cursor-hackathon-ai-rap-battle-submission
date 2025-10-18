@@ -133,6 +133,7 @@ export const createBattle = mutation({
       theme: theme.name,
       state: "waiting_for_partner",
       currentRound: 1,
+      activeRound: 1, // Start viewing at round 1
       agent1Name: theme.side1Name,
       agent2Name: theme.side2Name,
       partner1UserId: user._id,
@@ -765,5 +766,170 @@ export const getMusicTrack = query({
       ...track,
       storageUrl,
     };
+  },
+});
+
+/**
+ * Set which turn is currently playing (synchronized across all viewers)
+ */
+export const setPlayingTurn = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    turnId: v.union(v.id("turns"), v.null()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    await ctx.db.patch(args.battleId, {
+      currentlyPlayingTurnId: args.turnId ?? undefined,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Set which round all users should be viewing
+ */
+export const setActiveRound = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    roundNumber: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    if (args.roundNumber < 1 || args.roundNumber > MAX_ROUNDS) {
+      throw new Error("Invalid round number");
+    }
+
+    await ctx.db.patch(args.battleId, {
+      activeRound: args.roundNumber,
+      currentlyPlayingTurnId: undefined, // Stop playback when changing rounds
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Advance playback to next turn or next round
+ */
+export const advancePlayback = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    currentTurnId: v.id("turns"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    const currentTurn = await ctx.db.get(args.currentTurnId);
+    if (!currentTurn) {
+      throw new Error("Current turn not found");
+    }
+
+    // Get all turns for the current active round
+    const roundTurns = await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
+
+    const currentRoundTurns = roundTurns
+      .filter((t) => t.roundNumber === battle.activeRound)
+      .sort((a, b) => a.turnNumber - b.turnNumber);
+
+    // Check if current turn is agent1 or agent2
+    const isAgent1 = currentTurn.agentName === battle.agent1Name;
+    const agent2Turn = currentRoundTurns.find(
+      (t) => t.agentName === battle.agent2Name
+    );
+
+    if (isAgent1 && agent2Turn) {
+      // Agent1 finished, play agent2
+      await ctx.db.patch(args.battleId, {
+        currentlyPlayingTurnId: agent2Turn._id,
+        updatedAt: Date.now(),
+      });
+    } else {
+      // Agent2 finished or no agent2 turn, check if we can advance to next round
+      const nextRound = battle.activeRound + 1;
+      const hasNextRound = roundTurns.some((t) => t.roundNumber === nextRound);
+
+      if (hasNextRound && nextRound <= MAX_ROUNDS) {
+        // Advance to next round and start playing agent1
+        const nextRoundAgent1 = roundTurns.find(
+          (t) =>
+            t.roundNumber === nextRound && t.agentName === battle.agent1Name
+        );
+
+        await ctx.db.patch(args.battleId, {
+          activeRound: nextRound,
+          currentlyPlayingTurnId: nextRoundAgent1?._id,
+          updatedAt: Date.now(),
+        });
+      } else {
+        // No more rounds, stop playback
+        await ctx.db.patch(args.battleId, {
+          currentlyPlayingTurnId: undefined,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Start autoplay for a round (play agent1 first)
+ */
+export const startRoundPlayback = mutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    roundNumber: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      throw new Error("Battle not found");
+    }
+
+    // Get agent1's turn for this round
+    const turns = await ctx.db
+      .query("turns")
+      .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+      .collect();
+
+    const agent1Turn = turns.find(
+      (t) =>
+        t.roundNumber === args.roundNumber && t.agentName === battle.agent1Name
+    );
+
+    if (!agent1Turn) {
+      throw new Error("No turn found for this round");
+    }
+
+    await ctx.db.patch(args.battleId, {
+      activeRound: args.roundNumber,
+      currentlyPlayingTurnId: agent1Turn._id,
+      updatedAt: Date.now(),
+    });
+
+    return null;
   },
 });
