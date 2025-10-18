@@ -25,6 +25,10 @@ function ThemesList() {
     }
   };
 
+  const handleViewBattles = async (themeId: Id<"themes">) => {
+    await navigate({ to: "/battles/theme/$themeId", params: { themeId } });
+  };
+
   return (
     <div className="relative min-h-screen bg-zinc-950 p-6">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
@@ -61,13 +65,23 @@ function ThemesList() {
                 </span>
               </div>
 
-              <Button
-                className="w-full border-brand-cyan/60 bg-brand-cyan/10 text-brand-cyan hover:bg-brand-cyan/20"
-                onClick={() => handleCreateBattle(theme._id)}
-                variant="outline"
-              >
-                Create Battle
-              </Button>
+              <div className="grid gap-2">
+                <Button
+                  className="w-full border-brand-cyan/60 bg-brand-cyan/10 text-brand-cyan hover:bg-brand-cyan/20"
+                  onClick={() => handleCreateBattle(theme._id)}
+                  variant="outline"
+                >
+                  Create Battle
+                </Button>
+                
+                <Button
+                  className="w-full border-zinc-700/60 bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800/60"
+                  onClick={() => handleViewBattles(theme._id)}
+                  variant="outline"
+                >
+                  View Battles
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}

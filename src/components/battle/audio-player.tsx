@@ -46,12 +46,6 @@ export function AudioPlayer({
   const handleCheer = async (cheerType: "applause" | "boo" | "fire") => {
     try {
       await sendCheer({ battleId, cheerType });
-      const cheerEmojis = {
-        applause: "👏",
-        fire: "🔥",
-        boo: "👎",
-      };
-      toast.success(`${cheerEmojis[cheerType]} Cheer sent!`);
     } catch {
       toast.error("Failed to send cheer. Please try again.");
     }

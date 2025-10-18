@@ -1,4 +1,5 @@
 import { useQuery } from "convex/react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -13,12 +14,62 @@ const CHEER_ICONS = {
   fire: "🔥",
 } as const;
 
+const EMOJI_POSITION_RANGE = 80;
+const EMOJI_POSITION_OFFSET = 10;
+const EMOJI_DURATION_MS = 3000;
+
+type FlyingEmoji = {
+  id: string;
+  emoji: string;
+  left: number;
+};
+
 export function CheerDisplay({ battleId }: CheerDisplayProps) {
   const recentCheers = useQuery(api.cheers.getRecentCheers, { battleId });
   const cheerStats = useQuery(api.cheers.getCheerStats, { battleId });
+  const [flyingEmojis, setFlyingEmojis] = useState<FlyingEmoji[]>([]);
+  const previousCheersRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!recentCheers) {
+      return;
+    }
+
+    const currentCheerIds = recentCheers.map((c) => c._id);
+    const newCheers = recentCheers.filter(
+      (cheer) => !previousCheersRef.current.includes(cheer._id)
+    );
+
+    if (newCheers.length > 0 && previousCheersRef.current.length > 0) {
+      const newEmojis = newCheers.map((cheer) => ({
+        id: `${cheer._id}-${Date.now()}`,
+        emoji: CHEER_ICONS[cheer.cheerType],
+        left: Math.random() * EMOJI_POSITION_RANGE + EMOJI_POSITION_OFFSET,
+      }));
+
+      setFlyingEmojis((prev) => [...prev, ...newEmojis]);
+
+      setTimeout(() => {
+        setFlyingEmojis((prev) =>
+          prev.filter((e) => !newEmojis.find((ne) => ne.id === e.id))
+        );
+      }, EMOJI_DURATION_MS);
+    }
+
+    previousCheersRef.current = currentCheerIds;
+  }, [recentCheers]);
 
   return (
-    <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
+    <Card className="mesh-card relative overflow-hidden border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
+      {flyingEmojis.map((emoji) => (
+        <div
+          className="pointer-events-none absolute bottom-0 animate-fly-up text-4xl"
+          key={emoji.id}
+          style={{ left: `${emoji.left}%` }}
+        >
+          {emoji.emoji}
+        </div>
+      ))}
       <CardHeader>
         <CardTitle className="text-tokyo-fg text-xl">Crowd Reactions</CardTitle>
       </CardHeader>

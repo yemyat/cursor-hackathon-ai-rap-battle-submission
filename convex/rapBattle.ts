@@ -354,7 +354,7 @@ export const listBattles = query({
 });
 
 /**
- * Get battles for a specific theme
+ * Get battles for a specific theme with creator info
  */
 export const getBattlesForTheme = query({
   args: {
@@ -367,7 +367,19 @@ export const getBattlesForTheme = query({
       .withIndex("by_theme", (q) => q.eq("themeId", args.themeId))
       .order("desc")
       .collect();
-    return battles;
+
+    // Enrich battles with creator username
+    const enrichedBattles = await Promise.all(
+      battles.map(async (battle) => {
+        const creator = await ctx.db.get(battle.partner1UserId);
+        return {
+          ...battle,
+          creatorUsername: creator?.username ?? "Unknown",
+        };
+      })
+    );
+
+    return enrichedBattles;
   },
 });
 
