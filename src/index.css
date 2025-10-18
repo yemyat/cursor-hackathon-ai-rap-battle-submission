@@ -39,41 +39,39 @@
     --radius: 0.5rem;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 218 18% 11%;
-      --foreground: 224 15% 81%;
+  .dark {
+    --background: 218 18% 11%;
+    --foreground: 224 15% 81%;
 
-      --card: 222 16% 14%;
-      --card-foreground: 224 15% 81%;
+    --card: 222 16% 14%;
+    --card-foreground: 224 15% 81%;
 
-      --popover: 222 16% 14%;
-      --popover-foreground: 224 15% 81%;
+    --popover: 222 16% 14%;
+    --popover-foreground: 224 15% 81%;
 
-      --primary: 24 100% 60%;
-      --primary-foreground: 0 0% 5%;
+    --primary: 24 100% 60%;
+    --primary-foreground: 0 0% 5%;
 
-      --secondary: 24 20% 15%;
-      --secondary-foreground: 24 100% 80%;
+    --secondary: 24 20% 15%;
+    --secondary-foreground: 24 100% 80%;
 
-      --muted: 24 15% 18%;
-      --muted-foreground: 24 20% 65%;
+    --muted: 24 15% 18%;
+    --muted-foreground: 24 20% 65%;
 
-      --accent: 24 100% 60%;
-      --accent-foreground: 0 0% 5%;
+    --accent: 24 100% 60%;
+    --accent-foreground: 0 0% 5%;
 
-      --destructive: 354 83% 76%;
-      --destructive-foreground: 218 18% 11%;
+    --destructive: 354 83% 76%;
+    --destructive-foreground: 218 18% 11%;
 
-      --border: 24 20% 20%;
-      --input: 24 20% 20%;
-      --ring: 24 100% 60%;
+    --border: 24 20% 20%;
+    --input: 24 20% 20%;
+    --ring: 24 100% 60%;
 
-      --brand-orange: 24 100% 50%;
-      --brand-orange-light: 24 100% 65%;
-      --brand-orange-dark: 24 100% 35%;
-      --brand-coral: 12 94% 70%;
-    }
+    --brand-orange: 24 100% 50%;
+    --brand-orange-light: 24 100% 65%;
+    --brand-orange-dark: 24 100% 35%;
+    --brand-coral: 12 94% 70%;
   }
 }
 
