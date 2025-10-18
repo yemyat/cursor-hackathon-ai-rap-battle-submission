@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { TurnCard } from "@/components/battle/TurnCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -53,7 +53,8 @@ function BattleView() {
               {battle.theme}
             </h1>
             <p className="text-[15px] text-tokyo-comment">
-              {battle.agent1Name} <span className="text-tokyo-fgDark">vs</span> {battle.agent2Name}
+              {battle.agent1Name} <span className="text-tokyo-fgDark">vs</span>{" "}
+              {battle.agent2Name}
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -115,7 +116,7 @@ function BattleView() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-tokyo-blue shadow-[0_0_8px_rgba(122,162,247,0.6)]" />
-                <CardTitle className="text-center font-semibold text-xl text-tokyo-fg tracking-tight">
+                <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
                   {battle.agent1Name}
                 </CardTitle>
               </div>
@@ -141,7 +142,7 @@ function BattleView() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-tokyo-magenta shadow-[0_0_8px_rgba(187,154,247,0.6)]" />
-                <CardTitle className="text-center font-semibold text-xl text-tokyo-fg tracking-tight">
+                <CardTitle className="text-center font-semibold text-tokyo-fg text-xl tracking-tight">
                   {battle.agent2Name}
                 </CardTitle>
               </div>
@@ -163,65 +164,5 @@ function BattleView() {
         </div>
       </div>
     </div>
-  );
-}
-
-type Turn = {
-  _id: Id<"turns">;
-  roundNumber: number;
-  turnNumber: number;
-  agentName: string;
-  lyrics: string;
-  musicTrackId: Id<"musicTracks">;
-  threadId: string;
-};
-
-function TurnCard({ turn }: { turn: Turn }) {
-  const musicTrack = useQuery(api.rapBattle.getMusicTrack, {
-    trackId: turn.musicTrackId,
-  });
-
-  return (
-    <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-white/5 backdrop-blur-xl">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <Badge
-            className="rounded-md border-tokyo-terminal/80 bg-tokyo-bgDark/60 px-2.5 py-1 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider"
-            variant="outline"
-          >
-            Turn {turn.turnNumber}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-5 pt-2">
-        <div>
-          <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
-            Lyrics
-          </h4>
-          <p className="whitespace-pre-wrap font-medium text-[15px] text-tokyo-fg leading-7">
-            {turn.lyrics}
-          </p>
-        </div>
-
-        {musicTrack && (
-          <>
-            <Separator className="bg-tokyo-terminal/60" />
-            <div>
-              <h4 className="mb-3 font-medium text-[11px] text-tokyo-comment uppercase tracking-wider">
-                Audio
-              </h4>
-              <audio
-                className="w-full rounded-lg ring-1 ring-tokyo-terminal/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tokyo-blue/50"
-                controls
-                src={musicTrack.storageUrl ?? undefined}
-              >
-                <track kind="captions" />
-                Your browser does not support audio playback.
-              </audio>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
   );
 }
