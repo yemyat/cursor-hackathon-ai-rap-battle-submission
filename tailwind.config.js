@@ -10,6 +10,9 @@ module.exports = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Manrope", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -43,6 +46,12 @@ module.exports = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        brand: {
+          mint: "#1DB954",
+          purple: "#7E3AF2",
+          coral: "#FF6B1A",
+          cyan: "#00C2FF",
         },
       },
       borderRadius: {

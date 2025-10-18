@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,8 @@ function BattleView() {
   }
 
   // Get turns for the selected round
-  const roundTurns = turns?.filter((t) => t.roundNumber === selectedRound) ?? [];
+  const roundTurns =
+    turns?.filter((t) => t.roundNumber === selectedRound) ?? [];
   const agent1Turn = roundTurns.find((t) => t.agentName === battle.agent1Name);
   const agent2Turn = roundTurns.find((t) => t.agentName === battle.agent2Name);
 
@@ -42,31 +43,34 @@ function BattleView() {
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
-      {/* Header */}
+    <div className="relative min-h-screen animate-fade-up bg-zinc-950 p-6">
+      <div className="mesh-hero -z-10 animate-mesh-pan" />
+
       <div className="mx-auto mb-8 max-w-7xl">
-        <div className="flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-3xl text-zinc-50">{battle.theme}</h1>
-            <p className="text-zinc-400">Rap Battle</p>
+            <h1 className="mb-2 font-semibold text-4xl text-zinc-50 tracking-tight md:text-5xl">
+              {battle.theme}
+            </h1>
+            <p className="text-[15px] text-zinc-400">
+              {battle.agent1Name} vs {battle.agent2Name}
+            </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Badge
-              className="border-zinc-700 bg-zinc-800 text-zinc-50"
+              className="rounded-full border-zinc-700/60 bg-zinc-900/70 px-3 py-1.5 font-medium text-sm text-zinc-300"
               variant="outline"
             >
               Round {battle.currentRound}/3
             </Badge>
             <Badge
-              className={(() => {
-                if (battle.state === "done") {
-                  return "border-green-700 bg-green-900/20 text-green-400";
-                }
-                if (battle.state === "in_progress") {
-                  return "border-blue-700 bg-blue-900/20 text-blue-400";
-                }
-                return "border-zinc-700 bg-zinc-800 text-zinc-400";
-              })()}
+              className={`rounded-full px-3 py-1.5 font-medium text-sm ${
+                battle.state === "done"
+                  ? "border-brand-mint/50 bg-brand-mint/10 text-brand-mint"
+                  : battle.state === "in_progress"
+                    ? "border-brand-purple/50 bg-brand-purple/10 text-brand-purple"
+                    : "border-brand-cyan/50 bg-brand-cyan/10 text-brand-cyan"
+              }`}
               variant="outline"
             >
               {battle.state === "done" && "Complete"}
@@ -76,39 +80,40 @@ function BattleView() {
           </div>
         </div>
 
-        {/* Round Navigation */}
-        <div className="mt-6 flex items-center justify-center gap-4">
+        <div className="mt-8 flex items-center justify-center gap-4">
           <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
+            className="hover:glow-accent h-10 w-10 rounded-full border-zinc-700/60 bg-zinc-900/70 transition-all duration-300 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={selectedRound === 1}
-            className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-zinc-400">
-            Viewing Round {selectedRound} of {maxRound}
-          </span>
-          <Button
-            variant="outline"
+            onClick={() => setSelectedRound(Math.max(1, selectedRound - 1))}
             size="icon"
-            onClick={() => setSelectedRound(Math.min(maxRound, selectedRound + 1))}
-            disabled={selectedRound === maxRound}
-            className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700"
+            variant="outline"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="rounded-full border border-zinc-800/60 bg-zinc-950/60 px-6 py-2.5 backdrop-blur-sm">
+            <span className="font-medium text-sm text-zinc-300">
+              Round {selectedRound} of {maxRound}
+            </span>
+          </div>
+          <Button
+            className="hover:glow-accent h-10 w-10 rounded-full border-zinc-700/60 bg-zinc-900/70 transition-all duration-300 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={selectedRound === maxRound}
+            onClick={() =>
+              setSelectedRound(Math.min(maxRound, selectedRound + 1))
+            }
+            size="icon"
+            variant="outline"
+          >
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Split Screen */}
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6">
-        {/* Agent 1 */}
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8">
         <div className="space-y-6">
-          <Card className="border-zinc-800 bg-zinc-900">
-            <CardHeader>
-              <CardTitle className="text-center text-zinc-50">
+          <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center font-semibold text-2xl text-zinc-50 tracking-tight">
                 {battle.agent1Name}
               </CardTitle>
             </CardHeader>
@@ -117,19 +122,21 @@ function BattleView() {
           {agent1Turn ? (
             <TurnCard turn={agent1Turn} />
           ) : (
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardContent className="py-12 text-center text-zinc-500">
-                Waiting for verse...
+            <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+              <CardContent className="py-20 text-center">
+                <div className="relative inline-block">
+                  <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
+                  <p className="text-zinc-500">Waiting for verse...</p>
+                </div>
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Agent 2 */}
         <div className="space-y-6">
-          <Card className="border-zinc-800 bg-zinc-900">
-            <CardHeader>
-              <CardTitle className="text-center text-zinc-50">
+          <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center font-semibold text-2xl text-zinc-50 tracking-tight">
                 {battle.agent2Name}
               </CardTitle>
             </CardHeader>
@@ -138,9 +145,12 @@ function BattleView() {
           {agent2Turn ? (
             <TurnCard turn={agent2Turn} />
           ) : (
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardContent className="py-12 text-center text-zinc-500">
-                Waiting for verse...
+            <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+              <CardContent className="py-20 text-center">
+                <div className="relative inline-block">
+                  <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
+                  <p className="text-zinc-500">Waiting for verse...</p>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -166,32 +176,36 @@ function TurnCard({ turn }: { turn: Turn }) {
   });
 
   return (
-    <Card className="border-zinc-800 bg-zinc-900">
-      <CardHeader>
+    <Card className="mesh-card border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <Badge
-            className="border-zinc-700 bg-zinc-800 text-zinc-400"
+            className="rounded-full border-zinc-700/60 bg-zinc-900/70 px-2.5 py-1 font-medium text-[12px] text-zinc-300"
             variant="outline"
           >
-            Round {turn.roundNumber} - Turn {turn.turnNumber}
+            Turn {turn.turnNumber}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5 pt-2">
         <div>
-          <h4 className="mb-2 font-semibold text-sm text-zinc-400">Lyrics</h4>
-          <p className="whitespace-pre-wrap text-zinc-200">{turn.lyrics}</p>
+          <h4 className="mb-3 font-medium text-xs text-zinc-400 uppercase tracking-wider">
+            Lyrics
+          </h4>
+          <p className="whitespace-pre-wrap font-medium text-[15px] text-zinc-200 leading-7">
+            {turn.lyrics}
+          </p>
         </div>
 
         {musicTrack && (
           <>
-            <Separator className="bg-zinc-800" />
+            <Separator className="bg-white/5" />
             <div>
-              <h4 className="mb-2 font-semibold text-sm text-zinc-400">
+              <h4 className="mb-3 font-medium text-xs text-zinc-400 uppercase tracking-wider">
                 Audio
               </h4>
               <audio
-                className="w-full"
+                className="w-full rounded-lg ring-1 ring-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 controls
                 src={musicTrack.storageUrl ?? undefined}
               >

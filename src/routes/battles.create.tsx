@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/battles/create")({
@@ -42,69 +42,86 @@ function CreateBattle() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-900">
-        <CardHeader>
-          <CardTitle className="text-center text-3xl text-zinc-50">
-            Create Rap Battle
+    <div className="relative flex min-h-screen animate-fade-up items-center justify-center bg-zinc-950 p-4">
+      <div className="mesh-hero -z-10 animate-mesh-pan" />
+
+      <Card className="mesh-card w-full max-w-lg border-zinc-800/60 bg-zinc-950/60 ring-1 ring-white/5 backdrop-blur-sm">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-center font-semibold text-4xl text-zinc-50 tracking-tight">
+            Create Battle
           </CardTitle>
+          <p className="mt-2 text-center text-[15px] text-zinc-400">
+            Set up an epic AI rap battle showdown
+          </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="theme" className="text-zinc-200">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-3">
+              <Label
+                className="font-medium text-sm text-zinc-300"
+                htmlFor="theme"
+              >
                 Battle Theme
               </Label>
               <Input
+                className="h-11 border-zinc-700/60 bg-zinc-900/70 text-zinc-50 ring-1 ring-white/5 transition-all focus-visible:ring-2 focus-visible:ring-primary/50"
                 id="theme"
-                placeholder="Tech vs. Nature"
-                value={formData.theme}
                 onChange={(e) =>
                   setFormData({ ...formData, theme: e.target.value })
                 }
+                placeholder="Tech vs. Nature"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.theme}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="agent1" className="text-zinc-200">
+            <div className="space-y-3">
+              <Label
+                className="font-medium text-sm text-zinc-300"
+                htmlFor="agent1"
+              >
                 Agent 1 Name
               </Label>
               <Input
+                className="h-11 border-zinc-700/60 bg-zinc-900/70 text-zinc-50 ring-1 ring-white/5 transition-all focus-visible:ring-2 focus-visible:ring-primary/50"
                 id="agent1"
-                placeholder="CodeSlinger"
-                value={formData.agent1Name}
                 onChange={(e) =>
                   setFormData({ ...formData, agent1Name: e.target.value })
                 }
+                placeholder="CodeSlinger"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.agent1Name}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="agent2" className="text-zinc-200">
+            <div className="space-y-3">
+              <Label
+                className="font-medium text-sm text-zinc-300"
+                htmlFor="agent2"
+              >
                 Agent 2 Name
               </Label>
               <Input
+                className="h-11 border-zinc-700/60 bg-zinc-900/70 text-zinc-50 ring-1 ring-white/5 transition-all focus-visible:ring-2 focus-visible:ring-primary/50"
                 id="agent2"
-                placeholder="EarthMC"
-                value={formData.agent2Name}
                 onChange={(e) =>
                   setFormData({ ...formData, agent2Name: e.target.value })
                 }
+                placeholder="EarthMC"
                 required
-                className="border-zinc-700 bg-zinc-800 text-zinc-50"
+                value={formData.agent2Name}
               />
             </div>
 
             <Button
-              type="submit"
-              className="w-full bg-zinc-50 text-zinc-900 hover:bg-zinc-200"
+              className="group glow-primary relative mt-8 h-12 w-full overflow-hidden rounded-full bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] hover:shadow-primary/40 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50 disabled:hover:scale-100"
               disabled={isLoading}
+              type="submit"
             >
-              {isLoading ? "Starting Battle..." : "Start Battle"}
+              <span className="relative z-10">
+                {isLoading ? "Starting Battle..." : "Start Battle"}
+              </span>
+              <div className="-z-10 absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-brand-mint via-brand-cyan to-brand-mint transition-all duration-500 group-hover:bg-[position:100%_0]" />
             </Button>
           </form>
         </CardContent>
