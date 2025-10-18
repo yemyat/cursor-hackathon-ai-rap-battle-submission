@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Constants for sync thresholds
 const MS_TO_SECONDS = 1000;
@@ -28,78 +28,142 @@ export function AudioSync({
   trackUrl,
   onEnded,
 }: AudioSyncProps) {
-  const hasTriedPlayRef = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const syncIntervalRef = useRef<number | null>(null);
 
+  // Event listeners to track actual playback state
   useEffect(() => {
     const audio = audioRef.current;
-    if (!(audio && trackUrl)) {
-      return;
-    }
+    if (!audio) return;
 
-    // Load the audio file if it changed
+    const handlePlay = () => {
+      console.log("[AudioSync] Audio started playing");
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      console.log("[AudioSync] Audio paused");
+      setIsPlaying(false);
+    };
+
+    const handlePlaying = () => {
+      console.log("[AudioSync] Audio is playing");
+      setIsPlaying(true);
+    };
+
+    const handleWaiting = () => {
+      console.log("[AudioSync] Audio is buffering");
+    };
+
+    const handleCanPlay = () => {
+      console.log("[AudioSync] Audio can play");
+    };
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("playing", handlePlaying);
+    audio.addEventListener("waiting", handleWaiting);
+    audio.addEventListener("canplay", handleCanPlay);
+
+    return () => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("playing", handlePlaying);
+      audio.removeEventListener("waiting", handleWaiting);
+      audio.removeEventListener("canplay", handleCanPlay);
+    };
+  }, [audioRef]);
+
+  // Handle audio loading
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!(audio && trackUrl)) return;
+
     if (audio.src !== trackUrl) {
+      console.log("[AudioSync] Loading new track:", trackUrl);
       audio.src = trackUrl;
       audio.load();
-      hasTriedPlayRef.current = false;
     }
+  }, [audioRef, trackUrl]);
 
-    // Handle playback state changes
+  // Handle playback and sync
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (playbackState === "playing" && playbackStartedAt && playbackDuration) {
-      // Calculate current position based on server timestamp
-      const serverTime = playbackStartedAt;
-      const now = Date.now();
-      const elapsedMs = now - serverTime;
-      const positionSeconds = elapsedMs / MS_TO_SECONDS;
+      const syncAudio = () => {
+        const now = Date.now();
+        const elapsedMs = now - playbackStartedAt;
+        const positionSeconds = elapsedMs / MS_TO_SECONDS;
+        const durationSeconds = playbackDuration / MS_TO_SECONDS;
 
-      // Only sync if we're within the track duration
-      if (
-        positionSeconds >= 0 &&
-        positionSeconds < playbackDuration / MS_TO_SECONDS
-      ) {
-        // Sync audio position with server time
-        const currentPos = audio.currentTime;
-        const targetPos = positionSeconds;
+        if (positionSeconds >= 0 && positionSeconds < durationSeconds) {
+          const currentPos = audio.currentTime;
+          const targetPos = positionSeconds;
+          const drift = Math.abs(currentPos - targetPos);
 
-        // Only seek if we're more than threshold off (to avoid constant micro-adjustments)
-        if (
-          Math.abs(currentPos - targetPos) > SYNC_THRESHOLD_SECONDS &&
-          !hasTriedPlayRef.current
-        ) {
-          audio.currentTime = targetPos;
-        }
-
-        // Try to play if paused
-        if (audio.paused) {
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(() => {
-              // Autoplay was prevented - user needs to interact first
-              // Silent fail - this is expected behavior
-            });
+          if (drift > SYNC_THRESHOLD_SECONDS) {
+            console.log(
+              `[AudioSync] Re-syncing: drift=${drift.toFixed(2)}s, target=${targetPos.toFixed(2)}s`
+            );
+            audio.currentTime = targetPos;
           }
-          hasTriedPlayRef.current = true;
+
+          if (audio.paused) {
+            console.log("[AudioSync] Attempting to play audio");
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("[AudioSync] Playback started successfully");
+                })
+                .catch((error) => {
+                  console.warn(
+                    "[AudioSync] Autoplay prevented:",
+                    error.message
+                  );
+                });
+            }
+          }
+        } else if (positionSeconds >= durationSeconds) {
+          console.log("[AudioSync] Track ended (based on server time)");
+          audio.pause();
         }
-      } else if (positionSeconds >= playbackDuration / MS_TO_SECONDS) {
-        // Track should have ended
-        audio.pause();
-      }
-    } else if (playbackState === "idle" || playbackState === "completed") {
-      // Stop playback
+      };
+
+      // Initial sync
+      syncAudio();
+
+      // Set up periodic sync (every 500ms)
+      syncIntervalRef.current = window.setInterval(syncAudio, 500);
+
+      return () => {
+        if (syncIntervalRef.current !== null) {
+          clearInterval(syncIntervalRef.current);
+          syncIntervalRef.current = null;
+        }
+      };
+    }
+    if (playbackState === "idle" || playbackState === "completed") {
+      console.log("[AudioSync] Stopping playback");
       if (!audio.paused) {
         audio.pause();
       }
-      hasTriedPlayRef.current = false;
+      if (syncIntervalRef.current !== null) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
     }
-  }, [audioRef, playbackStartedAt, playbackDuration, playbackState, trackUrl]);
+  }, [audioRef, playbackStartedAt, playbackDuration, playbackState]);
 
   // Handle audio ended event
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) {
-      return;
-    }
+    if (!audio) return;
 
     const handleEnded = () => {
+      console.log("[AudioSync] Audio ended event fired");
       if (onEnded) {
         onEnded();
       }
@@ -111,5 +175,5 @@ export function AudioSync({
     };
   }, [audioRef, onEnded]);
 
-  return null; // This is a logic-only component
+  return null;
 }

@@ -44,6 +44,9 @@ CLERK_WEBHOOK_SECRET="whsec_..."
 
 # ElevenLabs (for music generation)
 ELEVENLABS_API_KEY="sk_..."
+
+# Gemini (for lyrics generation)
+GOOGLE_GENERATIVE_AI_API_KEY="sk_..."
 ```
 
 4. **Set up Clerk webhook**
@@ -65,18 +68,19 @@ This will start both the frontend (Vite) and backend (Convex) in parallel.
 
 ### React (.env.local)
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for authentication | Yes |
-| `VITE_CONVEX_URL` | Convex deployment URL | Yes |
+| Variable                     | Description                              | Required |
+| ---------------------------- | ---------------------------------------- | -------- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for authentication | Yes      |
+| `VITE_CONVEX_URL`            | Convex deployment URL                    | Yes      |
 
 ### Convex (Dashboard)
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `CLERK_JWT_ISSUER_DOMAIN` | Clerk JWT issuer domain for auth validation | Yes |
-| `CLERK_WEBHOOK_SECRET` | Clerk webhook signing secret for user sync | Yes |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key for AI-generated music | Yes |
+| Variable                       | Description                                 | Required |
+| ------------------------------ | ------------------------------------------- | -------- |
+| `CLERK_JWT_ISSUER_DOMAIN`      | Clerk JWT issuer domain for auth validation | Yes      |
+| `CLERK_WEBHOOK_SECRET`         | Clerk webhook signing secret for user sync  | Yes      |
+| `ELEVENLABS_API_KEY`           | ElevenLabs API key for AI-generated music   | Yes      |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Gemini API key for AI-generated lyrics      | Yes      |
 
 ## Available Scripts
 
