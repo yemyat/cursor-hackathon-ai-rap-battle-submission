@@ -110,7 +110,7 @@ export const startRapBattle = mutation({
     const battleId = await ctx.db.insert("rapBattles", {
       theme: args.theme,
       state: "preparing",
-      currentRound: 0,
+      currentRound: 1,
       agent1Name: args.agent1Name,
       agent2Name: args.agent2Name,
       agent1ThreadId,

@@ -33,6 +33,10 @@ function BattleView() {
   const agent2Rounds =
     rounds?.filter((r) => r.agentName === battle.agent2Name) ?? [];
 
+  // Get the latest round from each agent
+  const latestAgent1Round = agent1Rounds.at(-1);
+  const latestAgent2Round = agent2Rounds.at(-1);
+
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
       {/* Header */}
@@ -72,41 +76,45 @@ function BattleView() {
       {/* Split Screen */}
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6">
         {/* Agent 1 */}
-        <div className="space-y-4">
-          <div className="sticky top-6">
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
-                <CardTitle className="text-center text-zinc-50">
-                  {battle.agent1Name}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
+        <div className="space-y-6">
+          <Card className="border-zinc-800 bg-zinc-900">
+            <CardHeader>
+              <CardTitle className="text-center text-zinc-50">
+                {battle.agent1Name}
+              </CardTitle>
+            </CardHeader>
+          </Card>
 
-          <div className="space-y-4">
-            {agent1Rounds.map((round) => (
-              <RoundCard key={round._id} round={round} />
-            ))}
-          </div>
+          {latestAgent1Round ? (
+            <RoundCard round={latestAgent1Round} />
+          ) : (
+            <Card className="border-zinc-800 bg-zinc-900">
+              <CardContent className="py-12 text-center text-zinc-500">
+                Waiting for verse...
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Agent 2 */}
-        <div className="space-y-4">
-          <div className="sticky top-6">
-            <Card className="border-zinc-800 bg-zinc-900">
-              <CardHeader>
-                <CardTitle className="text-center text-zinc-50">
-                  {battle.agent2Name}
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
+        <div className="space-y-6">
+          <Card className="border-zinc-800 bg-zinc-900">
+            <CardHeader>
+              <CardTitle className="text-center text-zinc-50">
+                {battle.agent2Name}
+              </CardTitle>
+            </CardHeader>
+          </Card>
 
-          <div className="space-y-4">
-            {agent2Rounds.map((round) => (
-              <RoundCard key={round._id} round={round} />
-            ))}
-          </div>
+          {latestAgent2Round ? (
+            <RoundCard round={latestAgent2Round} />
+          ) : (
+            <Card className="border-zinc-800 bg-zinc-900">
+              <CardContent className="py-12 text-center text-zinc-500">
+                Waiting for verse...
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
