@@ -110,7 +110,7 @@ export const startRapBattle = mutation({
     const battleId = await ctx.db.insert("rapBattles", {
       theme: args.theme,
       state: "preparing",
-      currentRound: 1,
+      currentRound: 0,
       agent1Name: args.agent1Name,
       agent2Name: args.agent2Name,
       agent1ThreadId,
@@ -305,7 +305,9 @@ export const getMusicTrack = query({
   },
   handler: async (ctx, args) => {
     const track = await ctx.db.get(args.trackId);
-    if (!track) return null;
+    if (!track) {
+      return null;
+    }
 
     const storageUrl = await ctx.storage.getUrl(track.storageId);
     return {
