@@ -10,7 +10,7 @@ const MUSIC_DURATION_MS = 30_000;
 
 export const generateMusic = internalAction({
   args: {
-    prompt: v.string(),
+    lyrics: v.string(),
     agentName: v.string(),
   },
   returns: v.object({
@@ -31,9 +31,11 @@ export const generateMusic = internalAction({
     // Initialize ElevenLabs client
     const elevenlabs = new ElevenLabsClient({ apiKey });
 
+    const prompt = `Rap battle with these lyrics: ${args.lyrics}`;
+
     // Step 1: Create composition plan
     const compositionPlan = await elevenlabs.music.compositionPlan.create({
-      prompt: args.prompt,
+      prompt,
       musicLengthMs: MUSIC_DURATION_MS,
       sourceCompositionPlan: {
         positiveGlobalStyles: [
@@ -53,7 +55,7 @@ export const generateMusic = internalAction({
       internal.agents.tools.saveCompositionPlan.saveCompositionPlan,
       {
         agentName: args.agentName,
-        prompt: args.prompt,
+        prompt,
         compositionPlan,
         durationMs: MUSIC_DURATION_MS,
       }

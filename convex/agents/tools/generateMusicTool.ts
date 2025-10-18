@@ -7,10 +7,10 @@ export const generateMusicTool = createTool({
   description:
     "Generate a 30-second rap battle performance track with vocals. Use this to create complete rap tracks with vocals and beats for battling opponents.",
   args: z.object({
-    prompt: z
+    lyrics: z
       .string()
       .describe(
-        "A detailed description of the rap performance to generate, including vocal style, delivery, and production (e.g., 'Battle rap with male vocals, aggressive delivery over dark boom-bap beat at 90 BPM, menacing and raw')"
+        "The lyrics for the rap battle performance to generate. Make it epic."
       ),
   }),
   handler: async (
@@ -23,7 +23,7 @@ export const generateMusicTool = createTool({
     // Delegate to internal action
     const result: { storageUrl: string; trackId: Id<"musicTracks"> } =
       await ctx.runAction(internal.agents.tools.generateMusic.generateMusic, {
-        prompt: args.prompt,
+        lyrics: args.lyrics,
         agentName,
       });
 
