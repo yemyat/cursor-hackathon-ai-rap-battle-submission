@@ -43,7 +43,7 @@ function BattleView() {
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
   return (
-    <div className="relative min-h-screen animate-fade-up bg-tokyo-bg p-6">
+    <div className="relative min-h-screen bg-zinc-950 p-6">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
       <div className="mx-auto mb-10 max-w-7xl">

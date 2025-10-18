@@ -59,10 +59,10 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
         brand: {
-          mint: "#1DB954",
-          purple: "#7E3AF2",
+          orange: "#FF6600",
+          orangeLight: "#FF8533",
+          orangeDark: "#E55A00",
           coral: "#FF6B1A",
-          cyan: "#00C2FF",
         },
         tokyo: {
           bg: "#1a1b26",

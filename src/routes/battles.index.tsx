@@ -12,7 +12,7 @@ function BattlesList() {
   const battles = useQuery(api.rapBattle.listBattles);
 
   return (
-    <div className="relative min-h-screen animate-fade-up bg-zinc-950 p-6">
+    <div className="relative min-h-screen bg-zinc-950 p-6">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
       <div className="mx-auto max-w-7xl">
