@@ -83,6 +83,12 @@ export default defineSchema(
       // Shared playback state for all viewers
       activeRound: v.number(), // Which round all users are currently viewing
       currentlyPlayingTurnId: v.optional(v.id("turns")), // Which turn is playing
+      // Server-driven synchronized playback timing
+      playbackStartedAt: v.optional(v.number()), // Server timestamp when playback started
+      playbackDuration: v.optional(v.number()), // Track duration in ms
+      playbackState: v.optional(
+        v.union(v.literal("idle"), v.literal("playing"), v.literal("completed"))
+      ),
       createdAt: v.number(),
       updatedAt: v.number(),
     })

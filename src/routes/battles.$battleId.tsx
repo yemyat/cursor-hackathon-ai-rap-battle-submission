@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { toast } from "sonner";
 import { AudioPlayer } from "@/components/battle/audio-player";
+import { AudioSync } from "@/components/battle/audio-sync";
+import { BattleHeader } from "@/components/battle/battle-header";
 import { CheerDisplay } from "@/components/battle/cheer-display";
 import { InstructionInput } from "@/components/battle/instruction-input";
+import { RoundSelector } from "@/components/battle/round-selector";
 import { TurnCard } from "@/components/battle/turn-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { WaitingForPartner } from "@/components/battle/waiting-for-partner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -33,14 +34,11 @@ function BattleView() {
     battleId: battleId as Id<"rapBattles">,
   });
 
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const joinBattle = useMutation(api.rapBattle.joinBattle);
   const setPlayingTurn = useMutation(api.rapBattle.setPlayingTurn);
   const setActiveRound = useMutation(api.rapBattle.setActiveRound);
-  const advancePlayback = useMutation(api.rapBattle.advancePlayback);
-  const startRoundPlayback = useMutation(api.rapBattle.startRoundPlayback);
 
   // Use Convex-controlled state instead of local state
   const selectedRound = battle?.activeRound ?? 1;
@@ -87,34 +85,41 @@ function BattleView() {
     yourAgentName = battle?.partner2Side;
   }
 
-  // Audio event handlers
-  const handleAudioEnded = async () => {
+  // Handle round change
+  const handleRoundChange = async (newRound: number) => {
     if (!battle) {
       return;
     }
-    if (!currentlyPlayingTurn) {
-      return;
-    }
-
     try {
-      await advancePlayback({
+      await setActiveRound({
         battleId: battle._id,
-        currentTurnId: currentlyPlayingTurn,
+        roundNumber: newRound,
       });
     } catch {
-      toast.error("Failed to advance playback");
+      toast.error("Failed to change round");
     }
   };
 
-  const handleAudioPlay = () => {
-    // Audio play is managed through currentlyPlayingTurn state from Convex
-  };
-
-  const handleAudioPause = async () => {
+  // Handle play agent buttons
+  const handlePlayAgent = async (turnId: Id<"turns">) => {
     if (!battle) {
       return;
     }
+    try {
+      await setPlayingTurn({
+        battleId: battle._id,
+        turnId,
+      });
+    } catch {
+      toast.error("Failed to start playback");
+    }
+  };
 
+  // Handle pause
+  const handlePause = async () => {
+    if (!battle) {
+      return;
+    }
     try {
       await setPlayingTurn({
         battleId: battle._id,
@@ -124,53 +129,6 @@ function BattleView() {
       toast.error("Failed to pause");
     }
   };
-
-  // Effect to load and play audio when currentlyPlayingTurn changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) {
-      return;
-    }
-
-    if (currentlyPlayingTurn && currentTrack?.storageUrl) {
-      audio.src = currentTrack.storageUrl;
-      audio.load();
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Audio play failed - user interaction may be required
-        });
-      }
-    } else {
-      audio.pause();
-    }
-  }, [currentlyPlayingTurn, currentTrack?.storageUrl]);
-
-  // Autoplay agent1 when round is ready (only after user has interacted)
-  useEffect(() => {
-    if (
-      hasUserInteracted &&
-      battle &&
-      agent1Turn &&
-      agent1Track &&
-      !currentlyPlayingTurn
-    ) {
-      startRoundPlayback({
-        battleId: battle._id,
-        roundNumber: selectedRound,
-      }).catch(() => {
-        // Silently fail if autoplay doesn't work
-      });
-    }
-  }, [
-    hasUserInteracted,
-    battle,
-    agent1Turn,
-    agent1Track,
-    currentlyPlayingTurn,
-    selectedRound,
-    startRoundPlayback,
-  ]);
 
   if (!battle) {
     return (
@@ -182,156 +140,54 @@ function BattleView() {
 
   // Waiting for partner state
   if (battle.state === "waiting_for_partner") {
-    // Check if current user can join
     const canJoin = currentUser && !isPartner1 && !isPartner2;
 
     return (
-      <div className="relative min-h-screen bg-zinc-950 p-6">
-        <div className="mesh-hero -z-10 animate-mesh-pan" />
-
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-10">
-            <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
-              {battle.theme}
-            </h1>
-            <p className="text-[15px] text-tokyo-comment">
-              {battle.partner1Side} vs {battle.partner2Side}
-            </p>
-          </div>
-
-          <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
-            <CardContent className="py-16 text-center">
-              <div className="relative inline-block">
-                <div className="mesh-spot -z-10 absolute inset-0 opacity-50" />
-
-                {canJoin ? (
-                  <>
-                    <div className="mb-4 text-4xl">🎤</div>
-                    <p className="mb-2 font-semibold text-tokyo-fg text-xl">
-                      Join the Battle!
-                    </p>
-                    <p className="mb-6 text-sm text-tokyo-comment">
-                      Ready to drop some bars?
-                    </p>
-                    <Button
-                      className="border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta hover:bg-tokyo-magenta/20"
-                      onClick={async () => {
-                        try {
-                          await joinBattle({
-                            battleId: battle._id as Id<"rapBattles">,
-                          });
-                          toast.success("You've joined the battle! Get ready!");
-                        } catch {
-                          toast.error(
-                            "Failed to join battle. Please try again."
-                          );
-                        }
-                      }}
-                      variant="outline"
-                    >
-                      Join as {battle.partner2Side}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-4 text-4xl">⏳</div>
-                    <p className="mb-2 font-semibold text-tokyo-fg text-xl">
-                      Waiting for opponent...
-                    </p>
-                    <p className="mb-2 text-sm text-tokyo-comment">
-                      You're playing as {battle.partner1Side}
-                    </p>
-                    <p className="text-sm text-tokyo-comment">
-                      Share this battle link with someone to start!
-                    </p>
-                    <Button
-                      className="mt-4 border-tokyo-blue/60 bg-tokyo-blue/10 text-tokyo-blue hover:bg-tokyo-blue/20"
-                      onClick={() => {
-                        navigator.clipboard
-                          .writeText(window.location.href)
-                          .then(
-                            () => {
-                              toast.success("Battle link copied to clipboard!");
-                            },
-                            () => {
-                              toast.error(
-                                "Failed to copy link. Please try manually."
-                              );
-                            }
-                          );
-                      }}
-                      variant="outline"
-                    >
-                      Copy Battle Link
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <WaitingForPartner
+        battleId={battle._id}
+        canJoin={Boolean(canJoin)}
+        onJoin={async () => {
+          await joinBattle({
+            battleId: battle._id as Id<"rapBattles">,
+          });
+        }}
+        partner1Side={battle.partner1Side}
+        partner2Side={battle.partner2Side ?? "Unknown"}
+        theme={battle.theme}
+      />
     );
   }
 
   // Calculate total rounds that have at least one turn
   const maxRound = Math.max(...(turns?.map((t) => t.roundNumber) ?? [1]), 1);
 
-  // Battle state styling
-  const STATE_STYLES = {
-    done: "border-tokyo-green/60 bg-tokyo-green/10 text-tokyo-green",
-    in_progress:
-      "border-tokyo-magenta/60 bg-tokyo-magenta/10 text-tokyo-magenta",
-    preparing: "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan",
-    waiting_for_partner:
-      "border-tokyo-cyan/60 bg-tokyo-cyan/10 text-tokyo-cyan",
-  };
-
-  const STATE_LABELS = {
-    done: "Complete",
-    in_progress: "In Progress",
-    preparing: "Preparing",
-    waiting_for_partner: "Waiting",
-  };
-
-  const stateStyle = STATE_STYLES[battle.state] || STATE_STYLES.preparing;
-  const stateLabel = STATE_LABELS[battle.state] || STATE_LABELS.preparing;
-
   return (
     <div className="relative min-h-screen bg-zinc-950 p-6 pb-32">
       <div className="mesh-hero -z-10 animate-mesh-pan" />
 
+      {/* Hidden audio element controlled by AudioSync */}
+      <audio ref={audioRef} />
+
+      {/* AudioSync handles server-synchronized playback */}
+      <AudioSync
+        audioRef={audioRef}
+        playbackDuration={battle.playbackDuration}
+        playbackStartedAt={battle.playbackStartedAt}
+        playbackState={battle.playbackState}
+        trackUrl={currentTrack?.storageUrl}
+      />
+
       <div className="mb-10">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="mb-2 font-semibold text-4xl text-tokyo-fg tracking-tight md:text-5xl">
-              {battle.theme}
-            </h1>
-            <p className="text-[15px] text-tokyo-comment">
-              {battle.agent1Name} <span className="text-tokyo-fgDark">vs</span>{" "}
-              {battle.agent2Name}
-            </p>
-            {isRappingPartner && yourAgentName && (
-              <p className="mt-1 text-sm text-tokyo-cyan">
-                You're controlling {yourAgentName}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2.5">
-            <Badge
-              className="rounded-md border-tokyo-terminal/80 bg-tokyo-terminal/60 px-3 py-1.5 font-medium text-sm text-tokyo-fgDark backdrop-blur-sm"
-              variant="outline"
-            >
-              Round {battle.currentRound}/3
-            </Badge>
-            <Badge
-              className={`rounded-md px-3 py-1.5 font-medium text-sm backdrop-blur-sm ${stateStyle}`}
-              variant="outline"
-            >
-              {stateLabel}
-            </Badge>
-          </div>
-        </div>
+        <BattleHeader
+          agent1Name={battle.agent1Name}
+          agent2Name={battle.agent2Name}
+          battleState={battle.state}
+          currentRound={battle.currentRound}
+          isRappingPartner={Boolean(isRappingPartner)}
+          maxRounds={3}
+          theme={battle.theme}
+          yourAgentName={yourAgentName ?? undefined}
+        />
 
         {/* Instruction Input (only visible to rapping partners) */}
         {isRappingPartner && battle.state === "in_progress" && (
@@ -345,58 +201,17 @@ function BattleView() {
           </div>
         )}
 
-        {maxRound > 0 && (
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <Button
-              className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={selectedRound === 1}
-              onClick={async () => {
-                const newRound = Math.max(1, selectedRound - 1);
-                try {
-                  await setActiveRound({
-                    battleId: battle._id,
-                    roundNumber: newRound,
-                  });
-                } catch {
-                  toast.error("Failed to change round");
-                }
-              }}
-              size="icon"
-              variant="outline"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="rounded-lg border border-tokyo-terminal/80 bg-tokyo-bgDark/80 px-5 py-2 backdrop-blur-sm">
-              <span className="font-medium text-[13px] text-tokyo-fgDark tracking-wide">
-                Round {selectedRound} of {maxRound}
-              </span>
-            </div>
-            <Button
-              className="h-9 w-9 rounded-lg border-tokyo-terminal/80 bg-tokyo-terminal/60 text-tokyo-fgDark backdrop-blur-sm transition-all duration-200 hover:border-tokyo-blue/60 hover:bg-tokyo-terminal hover:text-tokyo-blue focus-visible:ring-2 focus-visible:ring-tokyo-blue/50 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={selectedRound === maxRound}
-              onClick={async () => {
-                const newRound = Math.min(maxRound, selectedRound + 1);
-                try {
-                  await setActiveRound({
-                    battleId: battle._id,
-                    roundNumber: newRound,
-                  });
-                } catch {
-                  toast.error("Failed to change round");
-                }
-              }}
-              size="icon"
-              variant="outline"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <RoundSelector
+          maxRound={maxRound}
+          onRoundChange={handleRoundChange}
+          selectedRound={selectedRound}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="grid grid-cols-2 gap-6">
+            {/* Agent 1 */}
             <div className="space-y-5">
               <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-blue/10 backdrop-blur-xl">
                 <CardHeader className="pb-4">
@@ -427,6 +242,7 @@ function BattleView() {
               )}
             </div>
 
+            {/* Agent 2 */}
             <div className="space-y-5">
               <Card className="mesh-card border-tokyo-terminal/50 bg-tokyo-terminal/30 ring-1 ring-tokyo-magenta/10 backdrop-blur-xl">
                 <CardHeader className="pb-4">
@@ -459,11 +275,13 @@ function BattleView() {
           </div>
         </div>
 
+        {/* Cheer Display */}
         <div className="lg:col-span-1">
           <CheerDisplay battleId={battle._id} />
         </div>
       </div>
 
+      {/* Audio Player */}
       <AudioPlayer
         agent1Name={battle.agent1Name}
         agent1Turn={agent1Turn}
@@ -475,33 +293,21 @@ function BattleView() {
         hasAgent1Track={agent1Track !== undefined}
         hasAgent2Track={agent2Track !== undefined}
         isCheerleader={isCheerleader ?? false}
-        onAudioEnded={handleAudioEnded}
-        onAudioPause={handleAudioPause}
-        onAudioPlay={handleAudioPlay}
+        onAudioEnded={() => {
+          // AudioSync handles this automatically via server
+        }}
+        onAudioPause={handlePause}
+        onAudioPlay={() => {
+          // AudioSync handles this automatically via server
+        }}
         onPlayAgent1={async () => {
           if (agent1Turn) {
-            setHasUserInteracted(true);
-            try {
-              await setPlayingTurn({
-                battleId: battle._id,
-                turnId: agent1Turn._id,
-              });
-            } catch {
-              toast.error("Failed to start playback");
-            }
+            await handlePlayAgent(agent1Turn._id);
           }
         }}
         onPlayAgent2={async () => {
           if (agent2Turn) {
-            setHasUserInteracted(true);
-            try {
-              await setPlayingTurn({
-                battleId: battle._id,
-                turnId: agent2Turn._id,
-              });
-            } catch {
-              toast.error("Failed to start playback");
-            }
+            await handlePlayAgent(agent2Turn._id);
           }
         }}
       />

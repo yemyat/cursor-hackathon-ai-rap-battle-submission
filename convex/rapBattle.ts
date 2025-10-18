@@ -15,6 +15,7 @@ import { createRapAgent } from "./agents/rapAgent";
 const TURN_DURATION_MS = 10_000; // 10 seconds for instructions
 const MAX_ROUNDS = 3;
 const POINT_FIVE = 0.5;
+const PLAYBACK_BUFFER_MS = 500; // Buffer time after track ends before auto-advance
 
 // Create a new rap battle thread
 export const createBattleThread = mutation({
@@ -384,6 +385,148 @@ export const checkTurnTimeout = internalMutation({
         instructions: "",
         partnerId: args.expectedUserId,
       });
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Check if playback has completed and auto-advance to next turn
+ */
+export const checkPlaybackComplete = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    turnId: v.id("turns"),
+    startedAt: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const battle = await ctx.db.get(args.battleId);
+    if (!battle) {
+      return null;
+    }
+
+    // Check if playback is still for this turn and started at this time
+    if (
+      battle.currentlyPlayingTurnId === args.turnId &&
+      battle.playbackStartedAt === args.startedAt
+    ) {
+      // Mark playback as completed
+      await ctx.db.patch(args.battleId, {
+        playbackState: "completed",
+        updatedAt: Date.now(),
+      });
+
+      // Auto-advance to next turn
+      const currentTurn = await ctx.db.get(args.turnId);
+      if (!currentTurn) {
+        return null;
+      }
+
+      // Get all turns for the current active round
+      const roundTurns = await ctx.db
+        .query("turns")
+        .withIndex("by_battle", (q) => q.eq("rapBattleId", args.battleId))
+        .collect();
+
+      const currentRoundTurns = roundTurns
+        .filter((t) => t.roundNumber === battle.activeRound)
+        .sort((a, b) => a.turnNumber - b.turnNumber);
+
+      // Check if current turn is agent1 or agent2
+      const isAgent1 = currentTurn.agentName === battle.agent1Name;
+      const agent2Turn = currentRoundTurns.find(
+        (t) => t.agentName === battle.agent2Name
+      );
+
+      if (isAgent1 && agent2Turn) {
+        // Agent1 finished, play agent2
+        // Get agent2 track duration
+        const agent2Track = await ctx.db.get(agent2Turn.musicTrackId);
+        if (!agent2Track) {
+          return null;
+        }
+        const agent2Plan = await ctx.db.get(agent2Track.compositionPlanId);
+        if (!agent2Plan) {
+          return null;
+        }
+
+        const serverTime = Date.now();
+        await ctx.db.patch(args.battleId, {
+          currentlyPlayingTurnId: agent2Turn._id,
+          playbackStartedAt: serverTime,
+          playbackDuration: agent2Plan.durationMs,
+          playbackState: "playing",
+          updatedAt: serverTime,
+        });
+
+        // Schedule next check
+        await ctx.scheduler.runAfter(
+          agent2Plan.durationMs + PLAYBACK_BUFFER_MS,
+          internal.rapBattle.checkPlaybackComplete,
+          {
+            battleId: args.battleId,
+            turnId: agent2Turn._id,
+            startedAt: serverTime,
+          }
+        );
+      } else {
+        // Agent2 finished or no agent2 turn, check if we can advance to next round
+        const nextRound = battle.activeRound + 1;
+        const hasNextRound = roundTurns.some(
+          (t) => t.roundNumber === nextRound
+        );
+
+        if (hasNextRound && nextRound <= MAX_ROUNDS) {
+          // Advance to next round and start playing agent1
+          const nextRoundAgent1 = roundTurns.find(
+            (t) =>
+              t.roundNumber === nextRound && t.agentName === battle.agent1Name
+          );
+
+          if (nextRoundAgent1) {
+            const agent1Track = await ctx.db.get(nextRoundAgent1.musicTrackId);
+            if (!agent1Track) {
+              return null;
+            }
+            const agent1Plan = await ctx.db.get(agent1Track.compositionPlanId);
+            if (!agent1Plan) {
+              return null;
+            }
+
+            const serverTime = Date.now();
+            await ctx.db.patch(args.battleId, {
+              activeRound: nextRound,
+              currentlyPlayingTurnId: nextRoundAgent1._id,
+              playbackStartedAt: serverTime,
+              playbackDuration: agent1Plan.durationMs,
+              playbackState: "playing",
+              updatedAt: serverTime,
+            });
+
+            // Schedule next check
+            await ctx.scheduler.runAfter(
+              agent1Plan.durationMs + PLAYBACK_BUFFER_MS,
+              internal.rapBattle.checkPlaybackComplete,
+              {
+                battleId: args.battleId,
+                turnId: nextRoundAgent1._id,
+                startedAt: serverTime,
+              }
+            );
+          }
+        } else {
+          // No more rounds, stop playback
+          await ctx.db.patch(args.battleId, {
+            currentlyPlayingTurnId: undefined,
+            playbackStartedAt: undefined,
+            playbackDuration: undefined,
+            playbackState: "idle",
+            updatedAt: Date.now(),
+          });
+        }
+      }
     }
 
     return null;
@@ -771,6 +914,7 @@ export const getMusicTrack = query({
 
 /**
  * Set which turn is currently playing (synchronized across all viewers)
+ * Now with server-side timing for true synchronization
  */
 export const setPlayingTurn = mutation({
   args: {
@@ -784,10 +928,56 @@ export const setPlayingTurn = mutation({
       throw new Error("Battle not found");
     }
 
-    await ctx.db.patch(args.battleId, {
-      currentlyPlayingTurnId: args.turnId ?? undefined,
-      updatedAt: Date.now(),
-    });
+    if (args.turnId === null) {
+      // Stop playback
+      await ctx.db.patch(args.battleId, {
+        currentlyPlayingTurnId: undefined,
+        playbackStartedAt: undefined,
+        playbackDuration: undefined,
+        playbackState: "idle",
+        updatedAt: Date.now(),
+      });
+    } else {
+      // Get the turn and its music track to get duration
+      const turn = await ctx.db.get(args.turnId);
+      if (!turn) {
+        throw new Error("Turn not found");
+      }
+
+      const track = await ctx.db.get(turn.musicTrackId);
+      if (!track) {
+        throw new Error("Music track not found");
+      }
+
+      // Get composition plan for duration
+      const plan = await ctx.db.get(track.compositionPlanId);
+      if (!plan) {
+        throw new Error("Composition plan not found");
+      }
+
+      const serverTime = Date.now();
+      const duration = plan.durationMs;
+
+      // Start playback with server timestamp
+      await ctx.db.patch(args.battleId, {
+        currentlyPlayingTurnId: args.turnId,
+        playbackStartedAt: serverTime,
+        playbackDuration: duration,
+        playbackState: "playing",
+        updatedAt: serverTime,
+      });
+
+      // Schedule auto-advance after track completes
+      await ctx.scheduler.runAfter(
+        duration + PLAYBACK_BUFFER_MS,
+        internal.rapBattle.checkPlaybackComplete,
+        {
+          battleId: args.battleId,
+          turnId: args.turnId,
+          startedAt: serverTime,
+        }
+      );
+    }
 
     return null;
   },
@@ -895,7 +1085,7 @@ export const advancePlayback = mutation({
 });
 
 /**
- * Start autoplay for a round (play agent1 first)
+ * Start autoplay for a round (play agent1 first) with timing
  */
 export const startRoundPlayback = mutation({
   args: {
@@ -924,11 +1114,37 @@ export const startRoundPlayback = mutation({
       throw new Error("No turn found for this round");
     }
 
+    // Get track duration
+    const track = await ctx.db.get(agent1Turn.musicTrackId);
+    if (!track) {
+      throw new Error("Music track not found");
+    }
+
+    const plan = await ctx.db.get(track.compositionPlanId);
+    if (!plan) {
+      throw new Error("Composition plan not found");
+    }
+
+    const serverTime = Date.now();
     await ctx.db.patch(args.battleId, {
       activeRound: args.roundNumber,
       currentlyPlayingTurnId: agent1Turn._id,
-      updatedAt: Date.now(),
+      playbackStartedAt: serverTime,
+      playbackDuration: plan.durationMs,
+      playbackState: "playing",
+      updatedAt: serverTime,
     });
+
+    // Schedule auto-advance
+    await ctx.scheduler.runAfter(
+      plan.durationMs + PLAYBACK_BUFFER_MS,
+      internal.rapBattle.checkPlaybackComplete,
+      {
+        battleId: args.battleId,
+        turnId: agent1Turn._id,
+        startedAt: serverTime,
+      }
+    );
 
     return null;
   },
