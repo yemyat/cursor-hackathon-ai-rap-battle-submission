@@ -12,6 +12,7 @@ Built with Convex, React, TypeScript, Vite, Clerk, Tailwind CSS, and shadcn/ui.
 - A [Clerk](https://clerk.dev/) account
 - A [Convex](https://www.convex.dev/) account
 - An [ElevenLabs](https://elevenlabs.io/) API key for music generation
+- A [Google Gemini](https://aistudio.google.com/) API key for lyrics generation
 
 ### Installation
 
