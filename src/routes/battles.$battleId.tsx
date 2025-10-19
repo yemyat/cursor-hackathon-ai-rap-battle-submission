@@ -47,6 +47,16 @@ function BattleView() {
     }
   }, [battle, battleId, navigate]);
 
+  if (!currentUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+        <p className="text-zinc-400">
+          Please sign in to join or view the battle.
+        </p>
+      </div>
+    );
+  }
+
   if (!battle) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
