@@ -59,6 +59,7 @@ export function BattleMainContent({
             currentUserId={currentUser?._id}
             partner1UserId={battle.partner1UserId}
             playbackState={battle.playbackState}
+            statusMessage={battle.statusMessage}
           />
         </div>
       )}

@@ -128,7 +128,7 @@ export function AudioPlayer({
             <div className="flex items-center gap-2 rounded-lg border border-tokyo-terminal/80 bg-tokyo-terminal/60 px-4 py-2 backdrop-blur-sm">
               <div className="h-2 w-2 animate-pulse rounded-full bg-tokyo-green" />
               <span className="text-sm text-tokyo-comment">
-                Workflow Auto-Play
+                Autoplay Enabled
               </span>
             </div>
           )}

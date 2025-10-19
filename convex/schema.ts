@@ -89,6 +89,7 @@ export default defineSchema(
       playbackState: v.optional(
         v.union(v.literal("idle"), v.literal("playing"), v.literal("completed"))
       ),
+      statusMessage: v.optional(v.string()),
       createdAt: v.number(),
       updatedAt: v.number(),
     })

@@ -34,6 +34,24 @@ export const setCurrentTurn = internalMutation({
 });
 
 /**
+ * Update battle status message for UI
+ */
+export const updateStatusMessage = internalMutation({
+  args: {
+    battleId: v.id("rapBattles"),
+    statusMessage: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.battleId, {
+      statusMessage: args.statusMessage,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+/**
  * Clear current turn state after instructions received or timeout
  */
 export const clearCurrentTurn = internalMutation({

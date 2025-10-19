@@ -1,4 +1,5 @@
 import type { Id } from "../../../convex/_generated/dataModel";
+import { Spinner } from "../ui/spinner";
 
 type BattleStatusProps = {
   currentTurnUserId?: Id<"users">;
@@ -10,6 +11,7 @@ type BattleStatusProps = {
   agent1Name: string;
   agent2Name: string;
   currentlyPlayingAgentName?: string;
+  statusMessage?: string;
 };
 
 /**
@@ -25,6 +27,7 @@ export function BattleStatus({
   agent1Name,
   agent2Name,
   currentlyPlayingAgentName,
+  statusMessage,
 }: BattleStatusProps) {
   if (battleState === "done") {
     return (
@@ -51,9 +54,12 @@ export function BattleStatus({
             🎵 Playing {currentlyPlayingAgentName}'s verse...
           </p>
         </div>
-        <p className="mt-2 text-center text-sm text-white/70">
-          Round {currentRound} of 3
-        </p>
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <p className="text-center text-sm text-white/70">
+            Round {currentRound} of 3
+          </p>
+          <Spinner className="size-3" />
+        </div>
       </div>
     );
   }
@@ -76,9 +82,12 @@ export function BattleStatus({
               : `⏳ Waiting for ${partnerName}...`}
           </p>
         </div>
-        <p className="mt-2 text-center text-sm text-white/70">
-          Round {currentRound} of 3
-        </p>
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <p className="text-center text-sm text-white/70">
+            Round {currentRound} of 3
+          </p>
+          <Spinner className="size-3" />
+        </div>
       </div>
     );
   }
@@ -89,12 +98,15 @@ export function BattleStatus({
       <div className="flex items-center justify-center gap-3">
         <div className="h-3 w-3 animate-pulse rounded-full bg-brand-coralDark shadow-[0_0_12px_rgba(217,107,84,0.8)]" />
         <p className="font-semibold text-lg text-white">
-          🎤 Generating lyrics and music...
+          {statusMessage || "🎤 Generating lyrics and music..."}
         </p>
       </div>
-      <p className="mt-2 text-center text-sm text-white/70">
-        Round {currentRound} of 3
-      </p>
+      <div className="mt-2 flex items-center justify-center gap-2">
+        <p className="text-center text-sm text-white/70">
+          Round {currentRound} of 3
+        </p>
+        <Spinner className="size-3" />
+      </div>
     </div>
   );
 }

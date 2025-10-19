@@ -171,6 +171,11 @@ async function executeTurn(
 
   // 3. Generate lyrics using the agent
   console.log(`✍️  Generating lyrics for ${agentName}...`);
+  await step.runMutation(internal.battleWorkflowHelpers.updateStatusMessage, {
+    battleId,
+    statusMessage: `✍️ ${agentName} is writing lyrics...`,
+  });
+  
   const lyrics = await step.runAction(
     internal.battleWorkflowHelpers.generateLyrics,
     {
@@ -183,6 +188,11 @@ async function executeTurn(
   );
 
   // 4. Generate composition plan (this saves it internally)
+  await step.runMutation(internal.battleWorkflowHelpers.updateStatusMessage, {
+    battleId,
+    statusMessage: `🎹 ${agentName} is planning the beat...`,
+  });
+  
   const { compositionPlan, compositionPlanId } = await step.runAction(
     internal.agents.tools.generateMusic.generateCompositionPlan,
     {
@@ -192,6 +202,11 @@ async function executeTurn(
   );
 
   // 5. Generate music from plan (this saves the track internally)
+  await step.runMutation(internal.battleWorkflowHelpers.updateStatusMessage, {
+    battleId,
+    statusMessage: `🎵 ${agentName} is composing the track...`,
+  });
+  
   const { trackId } = await step.runAction(
     internal.agents.tools.generateMusic.composeMusicFromPlan,
     {

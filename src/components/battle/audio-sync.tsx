@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 
 // Constants for sync thresholds
 const MS_TO_SECONDS = 1000;
@@ -71,8 +70,9 @@ export function AudioSync({
           if (audio.paused) {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
-              playPromise.catch(() => {
-                toast.error("Failed to play audio");
+              playPromise.catch((e) => {
+                // biome-ignore lint/suspicious/noConsole: <helpful>
+                console.error(e);
               });
             }
           }
